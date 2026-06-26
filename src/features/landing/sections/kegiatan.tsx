@@ -79,6 +79,7 @@ export default function Kegiatan() {
                   </p>
                 </div>
               </div>
+              <div className="w-full bg-black h-px mt-3" />
             </div>
           ))}
         </div>
