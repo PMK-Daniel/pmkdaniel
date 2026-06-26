@@ -29,7 +29,7 @@ export default function Navbar() {
           <a href="tentang" className="hover:text-[#3E4095] transition-colors">Form & Pendataan</a>
           <a href="/kontak" className="hover:text-[#3E4095] transition-colors">Kontak</a>
         </div>
-
+        
         {
 
         }
