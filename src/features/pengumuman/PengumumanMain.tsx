@@ -24,7 +24,7 @@ export default function PengumumanMainPage() {
                 {dataPengumuman.map((data) => (
                     <div key={data.id} className="flex flex-col items-center border border-black/10 p-6 rounded-[12px] md:rounded-[24px] lg:rounded-[30px] xl:rounded-[32px] w-full">
                         <div className="w-full">
-                            <div className="rounded-2xl overflow-hidden aspect-5/3 w-full  relative">
+                            <div className="rounded-2xl overflow-hidden aspect-2/3 w-full  relative">
                                 <Image
                                     src={data.imageUrl}
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw"
@@ -43,11 +43,6 @@ export default function PengumumanMainPage() {
                             <p className="mt-4 font-plusJakarta font-normal text-[14px] md:text-base">
                                 {truncateByWords({ text: data.description, wordLimit: 20 })}
                             </p>
-                            <div className="text-right mt-4 ">
-                                <Link href='/pengumuman' className="font-plusJakarta hover:underline font-normal text-[14px] md:text-base lg:text-[16px]">
-                                    See more &rarr;
-                                </Link>
-                            </div>
                         </div>
                     </div>
                 ))}
