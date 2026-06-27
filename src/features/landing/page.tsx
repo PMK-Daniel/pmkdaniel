@@ -12,12 +12,14 @@ import Sambutan from "./sections/sambutan";
 export default function LandingPage() {
     return (
         <>
+            <Navbar />
             <Hero />
             <About />
             <Sambutan />
             <Kegiatan />
             <Pengumuman />
             <CTA />
+            <Footer />
         </>
     );
 }
