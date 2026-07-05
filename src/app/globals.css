@@ -48,6 +48,14 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-border-yellow: #FED7AA;
+  --color-bg-iconyellow: #FFEDD5;
+  --color-border-green: #BBF7D0;
+  --color-bg-icongreen: #DCFCE7;
+  --color-border-blue: #BFDBFE;
+  --color-bg-iconblue: #DBEAFE;
+  --color-border-red: #FECACA;
+  --color-bg-iconred: #FEE2E2;
   
   /* keyframes */
   
