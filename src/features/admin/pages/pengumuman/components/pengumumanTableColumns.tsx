@@ -4,6 +4,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Trash2 } from "lucide-react";
 
 
+import Link from "next/link";
+
+
 export type pengumuman = {
     id: string;
     judul: string;
@@ -17,7 +20,14 @@ export const columns: ColumnDef<pengumuman>[] = [
         accessorKey: "judul",
         header: "JUDUL PENGUMUMAN",
         cell: ({ row }) => {
-            return <span className="font-plusJakarta font-bold text-base">{row.getValue("judul")}</span>
+            return (
+                <Link
+                    href={`/limarotiduaikan/${row.original.id}`}
+                    className="font-plusJakarta font-bold text-base hover:underline text-black hover:text-blue-600 transition-colors"
+                >
+                    {row.getValue("judul")}
+                </Link>
+            )
         },
     },
     {

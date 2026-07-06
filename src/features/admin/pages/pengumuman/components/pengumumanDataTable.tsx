@@ -44,15 +44,15 @@ export function DataTable<TData, TValue>({
     return (
         <div className="w-full border rounded-xl bg-white shadow-sm overflow-hidden mt-10">
             <div className="flex items-center justify-between p-4 border-b gap-4 flex-wrap">
-                <div className="max-w-sm w-full relative">
-                    <Funnel className="absolute left-0 size-6 text-black/50" />
+                <div className="max-w-sm w-full relative flex items-center">
+                    <Funnel className="absolute left-3.5 top-1/2 -translate-y-1/2 size-6 text-gray-500 pointer-events-none" />
                     <input
                         placeholder="Filter berdasarkan judul..."
                         value={(table.getColumn("judul")?.getFilterValue() as string) ?? ""}
                         onChange={(event) =>
                             table.getColumn("judul")?.setFilterValue(event.target.value)
                         }
-                        className="w-full pl-10"
+                        className="w-full pl-12 pr-4 py-2 text-sm bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 focus:border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-black/5 transition-all duration-200 placeholder:text-gray-500 font-plusJakarta font-medium text-black/80"
                     />
                 </div>
 
@@ -152,9 +152,9 @@ export function DataTable<TData, TValue>({
                         <Button
                             key={index}
                             variant={pageIndex === index ? "default" : "ghost"}
-                            className={`h-8 w-8 p-0 ${pageIndex === index
+                            className={`h-9 w-9 p-0 rounded-[6px] ${pageIndex === index
                                     ? "bg-[#2E3A8C] text-white hover:bg-[#2E3A8C]/95"
-                                    : "text-gray-600 hover:text-gray-950"
+                                    : "text-[#1E3A8A] hover:text-gray-950"
                                 }`}
                             onClick={() => table.setPageIndex(index)}
                         >
