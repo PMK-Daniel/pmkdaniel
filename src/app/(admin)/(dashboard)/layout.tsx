@@ -1,16 +1,9 @@
-// !TODO: berisi layout dari figma nya, sidebar atau component lain & children
+import AdminLayout from "@/components/adminLayout";
 
-import Sidebar from "@/features/admin/components/sidebar";
-
-export default function AdminLayout({
+export default function DashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    return(
-        <>
-            <Sidebar />
-            { children }
-        </>
-    );
+    return <AdminLayout>{children}</AdminLayout>;
 }
