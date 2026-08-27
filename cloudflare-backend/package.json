@@ -1,0 +1,20 @@
+{
+  "name": "pmkdaniel-cloudflare-backend",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker REST API for PMK Daniel FILKOM UB with D1 and R2",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:init": "wrangler d1 execute pmkdaniel-db --local --file=./schema.sql && wrangler d1 execute pmkdaniel-db --local --file=./seed.sql",
+    "d1:init:remote": "wrangler d1 execute pmkdaniel-db --remote --file=./schema.sql && wrangler d1 execute pmkdaniel-db --remote --file=./seed.sql"
+  },
+  "dependencies": {
+    "hono": "^4.7.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260826.1",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.126.0"
+  }
+}

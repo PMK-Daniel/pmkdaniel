@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pmkdaniel-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-02-24",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "JWT_SECRET": "pmk_daniel_super_secret_jwt_key_2026",
+    "R2_PUBLIC_DOMAIN": "https://pub-317e9a74788b4b17a1deee01aa307c7c.r2.dev"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pmkdaniel-db",
+      "database_id": "e183cf10-1f23-4deb-b29a-9d1170f44bf1"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      "bucket_name": "pmkdanielweb"
+    }
+  ]
+}
