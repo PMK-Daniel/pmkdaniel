@@ -69,7 +69,8 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      results = CANDIDATES.map((cand) => {
+      const currentCandidates = globalStore.customCandidates || CANDIDATES;
+      results = currentCandidates.map((cand) => {
         const count = countMap[cand.id] || 0;
         const percentage = totalVotes > 0 ? Number(((count / totalVotes) * 100).toFixed(2)) : 0;
         return {

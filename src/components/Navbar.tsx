@@ -42,6 +42,19 @@ export default function Navbar() {
           </Link>
 
           <Link
+            href="/mc"
+            target="_blank"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              pathname === '/mc'
+                ? 'text-red-700 bg-red-50 border border-red-200'
+                : 'text-slate-600 hover:text-red-600 hover:bg-slate-100'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span>Layar MC</span>
+          </Link>
+
+          <Link
             href="/admin"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               pathname === '/admin'
@@ -50,7 +63,7 @@ export default function Navbar() {
             }`}
           >
             <BarChart3 className="w-4 h-4 text-indigo-600" />
-            <span>Dashboard Perhitungan</span>
+            <span>Dashboard Admin</span>
           </Link>
         </nav>
       </div>
