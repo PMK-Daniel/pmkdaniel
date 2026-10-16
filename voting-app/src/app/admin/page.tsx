@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { 
   BarChart3, 
   Lock, 
-  ShieldAlert, 
+  Users, 
+  Edit3, 
+  Trash2, 
+  Plus, 
+  Minus, 
   RefreshCw, 
   Vote, 
   Trophy, 
@@ -13,11 +17,14 @@ import {
   Printer, 
   CheckCircle2, 
   Clock, 
-  ShieldCheck,
-  TrendingUp,
-  AlertCircle
+  Tv, 
+  Save, 
+  AlertCircle,
+  FileSpreadsheet
 } from 'lucide-react';
-import { CandidateTally } from '@/types/voting';
+import { CandidateTally, Candidate } from '@/types/voting';
+
+type AdminTab = 'TALLY' | 'VOTERS' | 'EDIT_CANDIDATES' | 'MANAGE_VOTES';
 
 export default function AdminDashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -25,12 +32,21 @@ export default function AdminDashboardPage() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Active Tab
+  const [activeTab, setActiveTab] = useState<AdminTab>('TALLY');
+
   // Dashboard Data
   const [totalVotes, setTotalVotes] = useState<number>(0);
   const [results, setResults] = useState<CandidateTally[]>([]);
+  const [voters, setVoters] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Edit Candidate State
+  const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
+  const [isSavingCandidate, setIsSavingCandidate] = useState(false);
 
   // 1. Ambil Data Perhitungan Suara
   const fetchTally = useCallback(async () => {
@@ -55,20 +71,44 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
+  // 2. Ambil Semua Informasi Pemilih (All Info)
+  const fetchVoters = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/voters');
+      const data = await res.json();
+      if (data.success) {
+        setVoters(data.voters || []);
+      }
+    } catch (e) {
+      console.error('Fetch voters error:', e);
+    }
+  }, []);
+
+  // 3. Ambil Daftar Kandidat untuk Diedit
+  const fetchCandidates = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/candidates');
+      const data = await res.json();
+      if (data.success) {
+        setCandidates(data.candidates || []);
+      }
+    } catch (e) {
+      console.error('Fetch candidates error:', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTally();
   }, [fetchTally]);
 
-  // Interval Auto-refresh tiap 5 detik
   useEffect(() => {
-    if (!isAuthenticated || !autoRefresh) return;
-    const interval = setInterval(() => {
-      fetchTally();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, autoRefresh, fetchTally]);
+    if (isAuthenticated) {
+      fetchVoters();
+      fetchCandidates();
+    }
+  }, [isAuthenticated, fetchVoters, fetchCandidates]);
 
-  // 2. Login Admin
+  // 4. Login Admin
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
@@ -89,6 +129,8 @@ export default function AdminDashboardPage() {
       setIsAuthenticated(true);
       setAdminPassword('');
       fetchTally();
+      fetchVoters();
+      fetchCandidates();
     } catch (err: unknown) {
       setLoginError(err instanceof Error ? err.message : 'Login gagal');
     } finally {
@@ -96,7 +138,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 3. Logout Admin
+  // 5. Logout Admin
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/logout', { method: 'POST' });
@@ -106,11 +148,88 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // 6. Simpan Perubahan Kandidat
+  const handleSaveCandidate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCandidate) return;
+
+    setIsSavingCandidate(true);
+    setStatusMessage(null);
+    try {
+      const res = await fetch('/api/admin/candidates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingCandidate),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Gagal menyimpan perubahan');
+      }
+
+      setStatusMessage(data.message);
+      setEditingCandidate(null);
+      fetchCandidates();
+      fetchTally();
+    } catch (err: unknown) {
+      setStatusMessage(err instanceof Error ? err.message : 'Gagal menyimpan');
+    } finally {
+      setIsSavingCandidate(false);
+    }
+  };
+
+  // 7. Koreksi / Edit Suara (Tambah / Kurang)
+  const handleAdjustVote = async (candidateId: string, countChange: number) => {
+    if (!confirm(`Konfirmasi: Ubah suara kandidat ${candidateId} sebesar ${countChange > 0 ? '+' + countChange : countChange}?`)) return;
+
+    try {
+      const res = await fetch('/api/admin/votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'adjust_count',
+          candidateId,
+          countChange,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        fetchTally();
+        setStatusMessage(data.message);
+      }
+    } catch (e) {
+      console.error('Adjust vote error:', e);
+    }
+  };
+
+  // 8. Reset Seluruh Suara
+  const handleResetAllVotes = async () => {
+    if (!confirm('PERINGATAN: Apakah Anda yakin ingin mereset SELURUH data suara dan pemilih menjadi 0? Tindakan ini tidak dapat dibatalkan!')) return;
+
+    try {
+      const res = await fetch('/api/admin/votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_all' }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        fetchTally();
+        fetchVoters();
+        setStatusMessage(data.message);
+      }
+    } catch (e) {
+      console.error('Reset votes error:', e);
+    }
+  };
+
   // Hitung Kandidat Unggul
   const sortedResults = [...results].sort((a, b) => b.votes - a.votes);
   const leadingCandidate = sortedResults.length > 0 && sortedResults[0].votes > 0 ? sortedResults[0] : null;
 
-  // Tampilan Login Jika Belum Terotentikasi
+  // Layar Login Jika Belum Login
   if (isAuthenticated === false) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -121,7 +240,7 @@ export default function AdminDashboardPage() {
 
           <h2 className="text-2xl font-bold text-center mb-1">Otentikasi Administrator</h2>
           <p className="text-xs text-center text-slate-400 mb-6">
-            Dashboard perhitungan suara hanya dapat diakses oleh Panitia / Admin Pemilihan PMK Daniel.
+            Akses penuh pengelolaan suara, kandidat, dan audit pemilihan PMK Daniel.
           </p>
 
           {loginError && (
@@ -145,7 +264,7 @@ export default function AdminDashboardPage() {
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm"
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                Default pengujian: <code className="text-indigo-300 font-mono">pmkdaniel2026admin</code>
+                Default: <code className="text-indigo-300 font-mono">pmkdaniel2026admin</code>
               </p>
             </div>
 
@@ -160,9 +279,7 @@ export default function AdminDashboardPage() {
                   Mengotentikasi...
                 </>
               ) : (
-                <>
-                  Buka Dashboard Perhitungan
-                </>
+                'Buka Dashboard Admin'
               )}
             </button>
           </form>
@@ -185,12 +302,12 @@ export default function AdminDashboardPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">
-                Panel Rekapitulasi Suara
+                Panel Kontrol Admin Penuh
               </span>
               <span className="text-slate-400 text-xs">• Live Sync</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Dashboard Perhitungan Suara Pemilihan
+              Dashboard Manajemen Pemilihan
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
               Pemilihan Ketua PMK Daniel FILKOM Universitas Brawijaya
@@ -198,24 +315,20 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Auto Refresh Toggle */}
-            <button
-              type="button"
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition ${
-                autoRefresh
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
-              }`}
+            {/* Tombol Buka Layar MC */}
+            <Link
+              href="/mc"
+              target="_blank"
+              className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
             >
-              <span className={`w-2 h-2 rounded-full ${autoRefresh ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-              Auto-Sync 5s: {autoRefresh ? 'ON' : 'OFF'}
-            </button>
+              <Tv className="w-3.5 h-3.5" />
+              Buka Layar MC (Panggung)
+            </Link>
 
             {/* Refresh Button */}
             <button
               type="button"
-              onClick={fetchTally}
+              onClick={() => { fetchTally(); fetchVoters(); fetchCandidates(); }}
               disabled={isLoadingData}
               className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition"
             >
@@ -230,7 +343,7 @@ export default function AdminDashboardPage() {
               className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition"
             >
               <Printer className="w-3.5 h-3.5" />
-              Cetak Rekap
+              Cetak
             </button>
 
             {/* Logout */}
@@ -244,246 +357,459 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <div className="max-w-7xl mx-auto mt-6 flex flex-wrap gap-2 border-t border-slate-800 pt-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab('TALLY')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
+              activeTab === 'TALLY'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Rekapitulasi Suara
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('VOTERS')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
+              activeTab === 'VOTERS'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Data Lengkap Pemilih ({voters.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('EDIT_CANDIDATES')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
+              activeTab === 'EDIT_CANDIDATES'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Edit3 className="w-4 h-4" />
+            Kelola & Edit Kandidat
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('MANAGE_VOTES')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition ${
+              activeTab === 'MANAGE_VOTES'
+                ? 'bg-red-600 text-white shadow-sm'
+                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Vote className="w-4 h-4" />
+            Koreksi & Reset Suara
+          </button>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
-        {/* MANDATORY PRIVACY ASSURANCE BANNER (Sesuai Aturan Ketat Pengguna) */}
-        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-5 rounded-2xl shadow-sm border border-indigo-800/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center shrink-0">
-              <ShieldAlert className="w-5 h-5 text-amber-300" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+        {/* Status Notification Message */}
+        {statusMessage && (
+          <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-2xl flex items-center justify-between text-xs sm:text-sm shadow-xs">
+            <div className="flex items-center gap-2 font-medium">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>{statusMessage}</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm sm:text-base text-white">
-                  Kepatuhan Privasi & Kerahasiaan Suara (Zero-Knowledge Architecture)
-                </h3>
-                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                  ENFORCED
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
-                Sesuai asas kerahasiaan pemilihan umum dan regulasi privasi sistem, <strong>sisi admin tidak memiliki akses dan sama sekali tidak dapat melihat identitas, nama, maupun email pemilih</strong>. Database kotak suara (ballots) terpisah secara kriptografis tanpa relasi pemilih, sehingga pilihan masing-masing mahasiswa terjamin 100% anonim.
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setStatusMessage(null)}
+              className="text-emerald-700 hover:underline font-bold"
+            >
+              Tutup
+            </button>
           </div>
-          <div className="text-xs text-slate-300 flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg shrink-0">
-            <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Blind Ballot Vault Active</span>
-          </div>
-        </div>
+        )}
 
-        {/* Metric Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Total Suara Masuk */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Total Suara Masuk</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                <Vote className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {totalVotes.toLocaleString('id-ID')}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              Surat suara terverifikasi sah
-            </p>
-          </div>
-
-          {/* Card 2: Kandidat Suara Terbanyak */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Perolehan Tertinggi</span>
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                <Trophy className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight truncate">
-              {leadingCandidate ? leadingCandidate.name : 'Belum Ada Suara'}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              {leadingCandidate ? `${leadingCandidate.votes} suara (${leadingCandidate.percentage}%)` : 'Menunggu pemilih pertama'}
-            </p>
-          </div>
-
-          {/* Card 3: Jumlah Kandidat */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Kandidat Terdaftar</span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <BarChart3 className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-3xl font-black text-slate-900 tracking-tight">
-              5 Calon
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Joseph, Zoe, Anna, Nata, Chelsea
-            </p>
-          </div>
-
-          {/* Card 4: Waktu Sinkronisasi Terakhir */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Pembaruan Terakhir</span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-sm font-bold text-slate-800 tracking-tight mt-1">
-              {lastUpdated ? new Date(lastUpdated).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'} WIB
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-              <RefreshCw className="w-3 h-3 text-slate-400" />
-              Sinkronisasi aktif real-time
-            </p>
-          </div>
-        </div>
-
-        {/* Hasil Perhitungan Rinci (Visual Bar Progress & Tally) */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-indigo-600" />
-                Rekapitulasi Perolehan Suara Kandidat
-              </h2>
-              <p className="text-xs text-slate-500">
-                Data dihitung otomatis dari tabel kotak suara digital.
-              </p>
-            </div>
-            <div className="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-              Total Akumulasi: <strong className="text-slate-800">{totalVotes} Suara</strong>
-            </div>
-          </div>
-
-          {/* List Progress per Kandidat */}
+        {/* TAB 1: REKAPITULASI SUARA */}
+        {activeTab === 'TALLY' && (
           <div className="space-y-6">
-            {results.map((cand, index) => {
-              const isWinner = leadingCandidate && leadingCandidate.candidate_id === cand.candidate_id;
-
-              return (
-                <div
-                  key={cand.candidate_id}
-                  className={`p-4 sm:p-5 rounded-2xl border transition ${
-                    isWinner 
-                      ? 'bg-blue-50/40 border-blue-200 shadow-xs' 
-                      : 'bg-slate-50/60 border-slate-200'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="w-9 h-9 rounded-xl text-white font-black flex items-center justify-center text-sm shadow-xs"
-                        style={{ backgroundColor: cand.avatar_color }}
-                      >
-                        0{cand.number}
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-base sm:text-lg text-slate-900">
-                            {cand.display_name}
-                          </h4>
-                          {isWinner && (
-                            <span className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Trophy className="w-3 h-3 text-amber-600" />
-                              Memimpin
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 italic">
-                          &ldquo;{cand.tagline}&rdquo;
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
-                      <div className="text-xl sm:text-2xl font-black text-slate-900">
-                        {cand.votes} <span className="text-xs font-normal text-slate-500">suara</span>
-                      </div>
-                      <div className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
-                        {cand.percentage}%
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden p-0.5">
-                    <div
-                      className="h-full rounded-full transition-all duration-700 ease-out shadow-xs"
-                      style={{
-                        width: `${Math.max(cand.percentage, 0.5)}%`,
-                        backgroundColor: cand.avatar_color,
-                      }}
-                    />
-                  </div>
+            {/* Metric Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Total Suara Masuk</span>
+                <div className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+                  {totalVotes.toLocaleString('id-ID')}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+                <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  Surat suara sah terhitung
+                </p>
+              </div>
 
-        {/* Tabel Rekapitulasi Resmi (Printable & Export Ready) */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-6 pb-4 border-b border-slate-100">
-            <h3 className="font-bold text-base text-slate-900">Tabel Rekapitulasi Berita Acara</h3>
-            <p className="text-xs text-slate-500">Format rekapitulasi standar untuk berita acara pemilihan umum PMK Daniel.</p>
-          </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Perolehan Tertinggi</span>
+                <div className="text-2xl font-black text-slate-900 tracking-tight mt-1 truncate">
+                  {leadingCandidate ? leadingCandidate.name : 'Belum Ada Suara'}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {leadingCandidate ? `${leadingCandidate.votes} suara (${leadingCandidate.percentage}%)` : 'Menunggu suara'}
+                </p>
+              </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-4">No. Urut</th>
-                  <th className="py-3 px-4">Nama Calon</th>
-                  <th className="py-3 px-4 text-center">Jumlah Perolehan Suara</th>
-                  <th className="py-3 px-4 text-center">Persentase (%)</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {results.map((c) => (
-                  <tr key={c.candidate_id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900">0{c.number}</td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{c.display_name}</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-slate-800">{c.votes} suara</td>
-                    <td className="py-3.5 px-4 text-center font-bold text-indigo-700">{c.percentage}%</td>
-                    <td className="py-3.5 px-4 text-center">
-                      {leadingCandidate?.candidate_id === c.candidate_id ? (
-                        <span className="bg-amber-100 text-amber-800 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
-                          Unggul
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 text-xs">-</span>
-                      )}
-                    </td>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Total Mahasiswa Memilih</span>
+                <div className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+                  {voters.length} Mahasiswa
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Terverifikasi @student.ub.ac.id
+                </p>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Pembaruan Terakhir</span>
+                <div className="text-sm font-bold text-slate-800 tracking-tight mt-2">
+                  {lastUpdated ? new Date(lastUpdated).toLocaleTimeString('id-ID') : '-'} WIB
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  Live Sync Aktif
+                </p>
+              </div>
+            </div>
+
+            {/* List Progress per Kandidat */}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
+              <h2 className="text-xl font-bold text-slate-900">Perolehan Suara Kandidat</h2>
+              <div className="space-y-5">
+                {results.map((cand) => {
+                  const isWinner = leadingCandidate && leadingCandidate.candidate_id === cand.candidate_id;
+
+                  return (
+                    <div
+                      key={cand.candidate_id}
+                      className={`p-5 rounded-2xl border transition ${
+                        isWinner ? 'bg-blue-50/40 border-blue-200' : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="w-10 h-10 rounded-xl text-white font-black flex items-center justify-center text-sm"
+                            style={{ backgroundColor: cand.avatar_color }}
+                          >
+                            0{cand.number}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-extrabold text-lg text-slate-900">
+                                {cand.display_name}
+                              </h4>
+                              {isWinner && (
+                                <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Trophy className="w-3 h-3 text-amber-600" /> Memimpin
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 italic">&ldquo;{cand.tagline}&rdquo;</p>
+                          </div>
+                        </div>
+
+                        <div className="text-right flex sm:flex-col items-center sm:items-end justify-between">
+                          <div className="text-2xl font-black text-slate-900">
+                            {cand.votes} <span className="text-xs font-normal text-slate-500">suara</span>
+                          </div>
+                          <div className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                            {cand.percentage}%
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden p-0.5">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 ease-out"
+                          style={{
+                            width: `${Math.max(cand.percentage, 0.5)}%`,
+                            backgroundColor: cand.avatar_color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: DATA LENGKAP PEMILIH (SEMUA INFORMASI) */}
+        {activeTab === 'VOTERS' && (
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-lg text-slate-900">Data Lengkap Informasi Pemilih</h3>
+                <p className="text-xs text-slate-500">
+                  Daftar seluruh mahasiswa UB yang telah melakukan voting berserta pilihan dan waktu vote.
+                </p>
+              </div>
+              <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-3 py-1 rounded-full self-start">
+                Total: {voters.length} Pemilih
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">No.</th>
+                    <th className="py-3 px-4">Email Mahasiswa UB</th>
+                    <th className="py-3 px-4">Pilihan Kandidat</th>
+                    <th className="py-3 px-4">Waktu Voting</th>
+                    <th className="py-3 px-4">Status</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
-                <tr>
-                  <td colSpan={2} className="py-3 px-4 text-left uppercase text-xs">Total Seluruh Suara Sah</td>
-                  <td className="py-3 px-4 text-center text-sm">{totalVotes} suara</td>
-                  <td className="py-3 px-4 text-center text-sm">100.00%</td>
-                  <td className="py-3 px-4 text-center text-xs text-emerald-600">Sah</td>
-                </tr>
-              </tfoot>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {voters.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
+                        Belum ada mahasiswa yang melakukan voting.
+                      </td>
+                    </tr>
+                  ) : (
+                    voters.map((v, i) => (
+                      <tr key={i} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3.5 px-4 font-mono text-xs">{i + 1}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-900 font-mono text-xs">
+                          {v.email}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg text-xs font-bold capitalize">
+                            {v.candidate_name || v.candidate_id}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-slate-500">
+                          {new Date(v.voted_at).toLocaleString('id-ID')}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="text-emerald-700 bg-emerald-50 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
+                            Terekam Sah
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Security Disclaimers Box */}
-        <div className="bg-slate-100 rounded-2xl p-4 border border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Sistem dilindungi arsitektur Anti-Tampering & Secret Ballot Supabase.</span>
+        {/* TAB 3: KELOLA & EDIT KANDIDAT */}
+        {activeTab === 'EDIT_CANDIDATES' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
+              <h3 className="font-bold text-lg text-slate-900 mb-1">Daftar Kandidat (Klik untuk Edit)</h3>
+              <p className="text-xs text-slate-500 mb-6">
+                Admin dapat mengubah nama, nomor urut, tagline, visi, misi, serta warna kartu kandidat.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {candidates.map((cand) => (
+                  <div
+                    key={cand.id}
+                    className="p-5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span
+                          className="w-8 h-8 rounded-lg text-white font-black text-xs flex items-center justify-center shadow-xs"
+                          style={{ backgroundColor: cand.avatarColor }}
+                        >
+                          0{cand.number}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">
+                          ID: {cand.id}
+                        </span>
+                      </div>
+                      <h4 className="font-extrabold text-base text-slate-900">{cand.displayName}</h4>
+                      <p className="text-xs text-slate-500 italic mt-1 line-clamp-2">&ldquo;{cand.tagline}&rdquo;</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setEditingCandidate({ ...cand })}
+                      className="mt-4 w-full py-2 px-3 rounded-xl bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit Informasi Kandidat
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal / Form Edit Kandidat */}
+            {editingCandidate && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 text-left animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">
+                        Edit Informasi Kandidat #{editingCandidate.number}
+                      </h3>
+                      <p className="text-xs text-slate-500">Perubahan akan langsung tampil di bilik suara pemilih.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingCandidate(null)}
+                      className="text-slate-400 hover:text-slate-600 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveCandidate} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Nama Tampilan
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editingCandidate.displayName}
+                        onChange={(e) => setEditingCandidate({ ...editingCandidate, displayName: e.target.value })}
+                        className="w-full px-4 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Tagline / Slogan
+                      </label>
+                      <input
+                        type="text"
+                        value={editingCandidate.tagline}
+                        onChange={(e) => setEditingCandidate({ ...editingCandidate, tagline: e.target.value })}
+                        className="w-full px-4 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Visi
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={editingCandidate.vision}
+                        onChange={(e) => setEditingCandidate({ ...editingCandidate, vision: e.target.value })}
+                        className="w-full px-4 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                        Warna Aksen Kartu
+                      </label>
+                      <input
+                        type="color"
+                        value={editingCandidate.avatarColor}
+                        onChange={(e) => setEditingCandidate({ ...editingCandidate, avatarColor: e.target.value })}
+                        className="h-10 w-24 rounded-lg cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditingCandidate(null)}
+                        className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSavingCandidate}
+                        className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        {isSavingCandidate ? 'Menyimpan...' : 'Simpan Perubahan'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
-          <div>
-            Terhubung ke Database: <span className="font-mono text-slate-700">xnbiaaxwltofdiklxhnw.supabase.co</span>
+        )}
+
+        {/* TAB 4: KOREKSI & RESET SUARA */}
+        {activeTab === 'MANAGE_VOTES' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-8">
+              <h3 className="font-bold text-lg text-slate-900 mb-1">Koreksi Suara Manual</h3>
+              <p className="text-xs text-slate-500 mb-6">
+                Admin dapat menambah atau mengurangi perolehan suara kandidat tertentu secara langsung.
+              </p>
+
+              <div className="space-y-4">
+                {results.map((c) => (
+                  <div key={c.candidate_id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg text-white font-bold text-xs flex items-center justify-center" style={{ backgroundColor: c.avatar_color }}>
+                        0{c.number}
+                      </span>
+                      <span className="font-bold text-slate-900">{c.display_name}</span>
+                      <span className="text-xs text-slate-500">({c.votes} suara saat ini)</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAdjustVote(c.candidate_id, -1)}
+                        className="w-8 h-8 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 flex items-center justify-center transition"
+                        title="Kurangi 1 suara"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAdjustVote(c.candidate_id, 1)}
+                        className="w-8 h-8 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 flex items-center justify-center transition"
+                        title="Tambah 1 suara"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Reset All Votes Danger Zone */}
+            <div className="bg-red-50 rounded-3xl border border-red-200 p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-base text-red-900">Reset Seluruh Data Pemilihan</h4>
+                  <p className="text-xs text-red-700 mt-0.5 leading-relaxed">
+                    Menghapus seluruh perolehan suara di kotak suara dan mereset status pemilih kembali ke 0. Gunakan hanya saat gladi bersih atau memulai pemilihan baru.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResetAllVotes}
+                    className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
+                  >
+                    Reset Seluruh Suara & Pemilih
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

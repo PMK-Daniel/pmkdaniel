@@ -100,6 +100,15 @@ export async function POST(req: NextRequest) {
       voteSuccess = true;
     }
 
+    // Catat informasi lengkap pemilih agar admin dapat melihat semua informasi
+    globalStore.mockVoterDetails?.push({
+      email: email,
+      email_hash: emailHash,
+      candidate_id: candidateId,
+      candidate_name: candidateId.charAt(0).toUpperCase() + candidateId.slice(1),
+      voted_at: new Date().toISOString(),
+    });
+
     // 5. Generate Tanda Terima Voting Kriptografis (Cryptographic Receipt)
     const receiptSeed = `${emailHash}:${Date.now()}:${Math.random()}`;
     const receiptHash = 'UB-VOTE-' + crypto.createHash('sha256').update(receiptSeed).digest('hex').substring(0, 16).toUpperCase();
