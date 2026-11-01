@@ -14,6 +14,16 @@ void main() {
       final gateway = FakeAccountGateway();
       await tester.pumpWidget(ChecklistApp(accountGateway: gateway));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Kirim tautan masuk'),
+        150,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.text('Kirim tautan masuk'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
       gateway.emit(
@@ -38,6 +48,16 @@ void main() {
       expect(find.byType(ReflectionArchivePage), findsOneWidget);
       gateway.emit(null);
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Kirim tautan masuk'),
+        150,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.text('Kirim tautan masuk'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.text('Hai, Tobias!'), findsNothing);

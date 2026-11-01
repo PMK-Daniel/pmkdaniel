@@ -1,5 +1,33 @@
 # Review of the six-feature homepage
 
+## Centered identity and color revision — 2026-11-01
+
+The requested refinement puts the Daniel Apps name above a centered 104px PMK
+logo. A warm off-white canvas, indigo headings/action and orange student-login
+control use the established PMK palette. Google remains a white control with
+its official multicolor G. The student label is now “Login dengan akun student”;
+its existing UB-through-Google route is unchanged.
+
+Asset provenance: `assets/logos/google-g.png` is the unchanged official raster
+from https://developers.google.com/static/identity/images/g-logo.png, linked by
+https://developers.google.com/identity/branding-guidelines. No generated or
+hand-drawn replacement logo was used. It is bundled locally at fixed 20px size.
+
+Scoped delivery gate: PASS for supplied copy/branding, native keyboard/focus
+controls, retained loading/error/disabled branches, scrollable short viewports,
+no decorative gradients/glass/cards, no new claims or signup requests, and no
+added dependency. Student foreground/border `#9B4810` on `#FFF0E3`, and headings
+`#2B2C6E` on `#FFFBF7`, exceed AA text contrast. Phone/tablet captures show the
+whole initial form without overflow. The session's anti-slop DURING choice
+continues to apply; this is an Impeccable color/layout refinement.
+
+Verification: 19 behavioral tests and both opt-in device renders passed on the
+combined run; the login gate test initially assumed the entire form was built
+in a short viewport. It now scrolls the actual login ListView and passes through
+onboarding, logout and route reset. Scoped analysis found no issues; web build
+passed. Live preview confirmed in `login-color-browser.png`. Computed contrast:
+student 5.66:1, heading 12.08:1, helper 5.98:1, email button 8.85:1.
+
 ## Login hierarchy revision — 2026-11-01
 
 The earlier login mixed an email input, three similarly emphasized actions and repeated explanatory paragraphs. The revision groups Google/UB separately from passwordless email; the email action now says “Kirim tautan masuk”. A single PMK identity row replaces duplicated app-bar branding. The heading is functional, fields are white, the width is bounded at 440px, and the form scrolls when the viewport or keyboard reduces available height. Extended copy is conditional on an actual state. This is direct implementation using Impeccable Operate guidance and anti-slop DURING, not a claimed run of the separate two-agent critique command.

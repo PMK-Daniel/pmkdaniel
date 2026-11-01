@@ -34,7 +34,7 @@ void main() {
       expect(gateway.emails, isEmpty);
       account.changeEmail();
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Universitas Brawijaya'));
+      await tester.tap(find.text('Login dengan akun student'));
       await tester.pumpAndSettle();
       expect(gateway.campusGoogle, isTrue);
       expect(gateway.emails, isEmpty);
@@ -264,12 +264,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('Universitas Brawijaya'),
+        find.text('Login dengan akun student'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Universitas Brawijaya'));
+      await tester.tap(find.text('Login dengan akun student'));
       await tester.pumpAndSettle();
       expect(find.text('Kirim tautan ke email UB'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);

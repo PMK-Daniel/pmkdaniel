@@ -51,6 +51,7 @@ class AccountPage extends StatelessWidget {
     final account = AccountScope.of(context);
     if (account.user == null) {
       return Scaffold(
+        backgroundColor: const Color(0xFFFFFBF7),
         body: SafeArea(
           child: Center(
             child: ConstrainedBox(
@@ -123,46 +124,40 @@ class _LoginFormState extends State<_LoginForm> {
       shrinkWrap: true,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       children: [
-        Row(
-          children: [
-            if (Navigator.canPop(context))
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                tooltip: 'Kembali',
-                icon: const Icon(Icons.arrow_back),
-              ),
-            Image.asset(
-              'assets/images/logo_pmk.png',
-              width: 44,
-              height: 44,
-              semanticLabel: 'PMK Daniel',
+        if (Navigator.canPop(context))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              tooltip: 'Kembali',
+              icon: const Icon(Icons.arrow_back),
             ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Daniel Apps',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.primary,
-                    ),
-                  ),
-                  Text(
-                    'PMK Daniel · FILKOM UB',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
+        const Text(
+          'Daniel Apps',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.primary,
+          ),
         ),
-        const SizedBox(height: 36),
+        const SizedBox(height: 18),
+        Center(
+          child: Image.asset(
+            'assets/images/logo_pmk.png',
+            width: 104,
+            height: 104,
+            semanticLabel: 'PMK Daniel',
+          ),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'PMK Daniel · FILKOM UB',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: AppTheme.secondaryDark),
+        ),
+        const SizedBox(height: 32),
         Text(
           sent
               ? 'Cek emailmu.'
@@ -171,11 +166,12 @@ class _LoginFormState extends State<_LoginForm> {
               : redirecting
               ? 'Lanjutkan di browser'
               : 'Masuk atau daftar',
+          textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 26,
             height: 1.3,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: AppTheme.primaryDark,
           ),
         ),
         if (sent || campus || redirecting) ...[
@@ -198,7 +194,7 @@ class _LoginFormState extends State<_LoginForm> {
         const SizedBox(height: 28),
         if (a.loadingProviders) const LinearProgressIndicator(),
         if (!sent && !campus && !redirecting) ...[
-          OutlinedButton(
+          OutlinedButton.icon(
             style: _providerStyle,
             onPressed:
                 a.busy || a.loadingProviders || a.providers?.google != true
@@ -207,16 +203,32 @@ class _LoginFormState extends State<_LoginForm> {
                     a.email = '';
                     a.startGoogle();
                   },
-            child: const Text('Lanjut dengan Google'),
+            icon: Image.asset(
+              'assets/logos/google-g.png',
+              width: 20,
+              height: 20,
+              excludeFromSemantics: true,
+            ),
+            label: const Text('Lanjut dengan Google'),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            style: _providerStyle,
+            style: _providerStyle.copyWith(
+              backgroundColor: const WidgetStatePropertyAll(
+                AppTheme.warmSurface,
+              ),
+              foregroundColor: const WidgetStatePropertyAll(
+                AppTheme.secondaryDark,
+              ),
+              side: const WidgetStatePropertyAll(
+                BorderSide(color: AppTheme.secondaryDark),
+              ),
+            ),
             onPressed: a.busy || a.loadingProviders
                 ? null
                 : () => a.continueWithCampus(_email.text),
             icon: const Icon(Icons.school_outlined, size: 19),
-            label: const Text('Universitas Brawijaya'),
+            label: const Text('Login dengan akun student'),
           ),
           if (a.providers != null && !a.providers!.google)
             const Padding(
@@ -378,6 +390,7 @@ class _LoginFormState extends State<_LoginForm> {
 
   ButtonStyle get _providerStyle => OutlinedButton.styleFrom(
     minimumSize: const Size(48, 50),
+    backgroundColor: Colors.white,
     foregroundColor: AppTheme.textPrimary,
     side: const BorderSide(color: Color(0xFF89899B)),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

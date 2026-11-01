@@ -134,6 +134,12 @@ void main() {
           ),
         ),
       );
+      await tester.runAsync(() async {
+        await precacheImage(
+          const AssetImage('assets/logos/google-g.png'),
+          tester.element(find.byType(AccountPage)),
+        );
+      });
       await tester.pumpAndSettle();
       await capture('account-${device.$1}');
       gateway.available = const AccountProviders(email: true);

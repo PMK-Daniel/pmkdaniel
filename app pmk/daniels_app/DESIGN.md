@@ -28,11 +28,13 @@ Flutter app, not a new brand.
   accounts without a display name first choose how they want to be addressed.
   Logout and identity changes reset navigation so protected pages do not remain
   visible behind an old route. Existing sessions can return directly to Home.
-- Login is an Operate surface: a centered 440px form, one PMK wordmark row,
-  a compact functional heading, Google and UB grouped above a separator, and
+- Login is an Operate surface: a centered 440px form,
+  a centered name above the 104px PMK logo, Google and student login grouped above a separator, and
   a labeled email field with a precise send-link action below. Provider login
   never requires completing the email form. White fields and neutral outlines
-  keep indigo reserved for the email submission and visible focus. Explanations
+  keep indigo for the product name, email submission and visible focus. The warm
+  off-white canvas and orange student-login control echo the PMK website; the
+  Google control stays white with its official multicolor mark. Explanations
   appear progressively for sent email, missing providers, redirect and errors.
 - A single thin separator introduces the news feed. Only Web PMK appears in
   quick access. Divisions and administrative tools do not appear on Home;
