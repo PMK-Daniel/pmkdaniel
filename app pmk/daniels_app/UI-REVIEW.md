@@ -1,5 +1,39 @@
 # Review of the six-feature homepage
 
+## Login hierarchy revision — 2026-11-01
+
+The earlier login mixed an email input, three similarly emphasized actions and repeated explanatory paragraphs. The revision groups Google/UB separately from passwordless email; the email action now says “Kirim tautan masuk”. A single PMK identity row replaces duplicated app-bar branding. The heading is functional, fields are white, the width is bounded at 440px, and the form scrolls when the viewport or keyboard reduces available height. Extended copy is conditional on an actual state. This is direct implementation using Impeccable Operate guidance and anti-slop DURING, not a claimed run of the separate two-agent critique command.
+
+Render evidence: `.impeccable/review/account-phone.png` (390×844) and `account-tablet.png` (1024×1366), with actual first-screen navigation (no artificial Back button) and enabled fake providers only in render tests. Functional tests separately exercise real UI controls against a fake gateway, without sending email or granting account access. Live provider redirects were verified in the prior OAuth setup; this revision changes presentation, not the OAuth credentials.
+
+Delivery gate for this revision:
+
+Final verification: 20 behavioral tests passed (two opt-in render tests skipped on that run); phone/tablet images from the bounded render pass were inspected separately. Scoped analysis found no issues and the web build succeeded. The rebuilt app was copied to the local preview and its actual guest login was verified in the browser: `.impeccable/review/login-ux-browser.png`.
+
+- R-02 PASS: visible new login copy contains no em dash.
+- R-03 PASS: phone/tablet native render tests completed without overflow exceptions.
+- R-17 PASS: no statistics are displayed.
+- R-18 PASS: no testimonials are displayed.
+- R-23 PASS: existing PMK logo, font and Material school icon reused; no new visual asset created.
+- R-24 PASS: no navigation links added; root login has no Home bypass or Back control.
+- R-25 PASS: body `#242443`, helper `#5E6076` and indigo `#3E4095` use the existing light canvas; disabled controls retain their intentional disabled treatment.
+- R-26 PASS: Google/UB invoke controller login actions; email invokes link request; retry, change method, code verify and resend retain tested handlers.
+- R-27 PASS: loading, provider-unavailable, sent-email, redirect and error branches are retained.
+- R-28 PASS: no FAQ introduced.
+- R-32 PASS: Tab/Enter activates Google without entering email in the widget journey test; native Material controls retain focus states.
+- R-33 PASS: edits authored as source patches; no source-rewrite script used.
+- R-34 PASS: existing light theme retained; no theme toggle introduced.
+- R-35 PASS: focused analysis, full widget/render tests and web build verify the changed surface; no real signup was sent by the tests.
+- R-36 PASS: no new security, performance or compliance claim appears in the UI.
+- R-37 PASS: existing PMK website typography/palette and explicit login-first requirement set the direction; Operate mode, energy 2, rhythm 1, motion 0.
+- R-38 PASS: no invented user, service provider or account-success state in production.
+- R-39 PASS: persistent email label, semantic logo label, native keyboard controls and at least 48px actions; no authored animation.
+- R-40 PASS: logo has fixed 44×44 dimensions; no remote media or additional scripts introduced.
+- Purpose gate PASS: no gradients, glow, decorative grid, badge, uppercase kicker or marketing illustration. Separator distinguishes the two authentication paths; indigo marks submission/focus; the campus icon identifies UB.
+- Liveliness PASS: the actual PMK identity, website font and campus-specific route identify the product without decorative onboarding claims.
+- C-1..C-5 PASS: hierarchy follows authentication tasks; existing gateway and error handling remain; validation, keyboard operation, session gate and logout have behavioral coverage; external OAuth success is not fabricated.
+- Consistency locks PASS: one type family, 10px control corners, shared PMK colors, a bounded form and consistent native button/input behavior.
+
 ## Login-first flow and photo hero — 2026-11-01
 
 Signed-out users now land on login/sign-up, and verified accounts without a display name complete their profile before Home. The app uses the actual session name for “Hai, [name]!” and derives initials from its first two words. No student or membership status is inferred from the name or email. Changing identity or logging out resets the Navigator, including a page already open above Home.

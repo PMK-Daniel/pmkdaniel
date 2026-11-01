@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:checklist_app/features/account/account_controller.dart';
 import 'package:checklist_app/features/account/account_page.dart';
+import 'package:checklist_app/features/account/account_gateway.dart';
 import 'support/fake_account_gateway.dart';
 import 'package:checklist_app/theme/app_theme.dart';
 
@@ -115,7 +116,9 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
       await hubGateway.dispose();
-      final gateway = FakeAccountGateway();
+      final gateway = FakeAccountGateway(
+        available: const AccountProviders(email: true, google: true),
+      );
       final account = AccountController(gateway);
       await account.loadProviders();
       await tester.pumpWidget(
@@ -126,21 +129,15 @@ void main() {
             child: MaterialApp(
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
-              home: Builder(
-                builder: (context) => Scaffold(
-                  body: TextButton(
-                    onPressed: () => openAccount(context),
-                    child: const Text('Open account'),
-                  ),
-                ),
-              ),
+              home: const AccountPage(),
             ),
           ),
         ),
       );
-      await tester.tap(find.text('Open account'));
       await tester.pumpAndSettle();
       await capture('account-${device.$1}');
+      gateway.available = const AccountProviders(email: true);
+      await account.loadProviders();
       await account.continueWithCampus('nama@student.ub.ac.id');
       await tester.pumpAndSettle();
       await capture('account-ub-${device.$1}');

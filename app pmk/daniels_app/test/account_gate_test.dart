@@ -14,7 +14,7 @@ void main() {
       final gateway = FakeAccountGateway();
       await tester.pumpWidget(ChecklistApp(accountGateway: gateway));
       await tester.pumpAndSettle();
-      expect(find.text('Lanjut dengan email'), findsOneWidget);
+      expect(find.text('Kirim tautan masuk'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
       gateway.emit(
         const MemberAccount(
@@ -38,7 +38,7 @@ void main() {
       expect(find.byType(ReflectionArchivePage), findsOneWidget);
       gateway.emit(null);
       await tester.pumpAndSettle();
-      expect(find.text('Lanjut dengan email'), findsOneWidget);
+      expect(find.text('Kirim tautan masuk'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.text('Hai, Tobias!'), findsNothing);
       expect(find.byType(ReflectionArchivePage), findsNothing);

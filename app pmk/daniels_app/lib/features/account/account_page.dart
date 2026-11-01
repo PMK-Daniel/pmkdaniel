@@ -49,6 +49,18 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final account = AccountScope.of(context);
+    if (account.user == null) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: _LoginForm(account: account),
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(onboarding ? 'Lengkapi profil' : 'Akun Daniel Apps'),
@@ -108,51 +120,135 @@ class _LoginFormState extends State<_LoginForm> {
     final campus = a.step == AccountStep.campusUnavailable;
     final redirecting = a.step == AccountStep.redirecting;
     return ListView(
-      padding: const EdgeInsets.all(24),
+      shrinkWrap: true,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Image.asset(
-            'assets/images/logo_pmk.png',
-            width: 56,
-            height: 56,
-            semanticLabel: 'PMK Daniel',
-          ),
+        Row(
+          children: [
+            if (Navigator.canPop(context))
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                tooltip: 'Kembali',
+                icon: const Icon(Icons.arrow_back),
+              ),
+            Image.asset(
+              'assets/images/logo_pmk.png',
+              width: 44,
+              height: 44,
+              semanticLabel: 'PMK Daniel',
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Daniel Apps',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  Text(
+                    'PMK Daniel · FILKOM UB',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 26),
+        const SizedBox(height: 36),
         Text(
           sent
               ? 'Cek emailmu.'
               : campus
-              ? 'Masuk dengan\nemail UB.'
+              ? 'Login UB belum tersedia'
               : redirecting
-              ? 'Selesaikan login\ndi browser.'
-              : 'Masuk ke\nDaniel Apps.',
+              ? 'Lanjutkan di browser'
+              : 'Masuk atau daftar',
           style: const TextStyle(
-            fontSize: 30,
-            height: 1.2,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.primaryDark,
+            fontSize: 26,
+            height: 1.3,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 16),
-        Text(
-          sent
-              ? 'Buka tautan masuk yang dikirim ke ${a.email}. Jika emailmu juga berisi kode, masukkan kodenya di bawah.'
-              : campus
-              ? '${a.email.isEmpty ? '' : '${a.email}\n\n'}Login UB melalui Google belum diaktifkan di Daniel Apps. Kamu tetap bisa masuk lewat tautan email.'
-              : redirecting
-              ? 'Lanjutkan di halaman penyedia akun. Setelah berhasil, kamu akan kembali ke Daniel Apps.'
-              : 'Masuk atau daftar menggunakan email kampus maupun pribadi. Tidak perlu membuat password baru.',
-          style: const TextStyle(
-            fontSize: 15,
-            height: 1.75,
-            color: AppTheme.textSecondary,
+        if (sent || campus || redirecting) ...[
+          const SizedBox(height: 12),
+          Text(
+            sent
+                ? 'Buka tautan masuk yang dikirim ke ${a.email}. Jika emailmu juga berisi kode, masukkan kodenya di bawah.'
+                : campus
+                ? '${a.email.isEmpty ? '' : '${a.email}\n\n'}Login UB melalui Google belum diaktifkan di Daniel Apps. Kamu tetap bisa masuk lewat tautan email.'
+                : redirecting
+                ? 'Lanjutkan di halaman penyedia akun. Setelah berhasil, kamu akan kembali ke Daniel Apps.'
+                : 'Masuk atau daftar menggunakan email kampus maupun pribadi. Tidak perlu membuat password baru.',
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.75,
+              color: AppTheme.textSecondary,
+            ),
           ),
-        ),
-        const SizedBox(height: 26),
+        ],
+        const SizedBox(height: 28),
         if (a.loadingProviders) const LinearProgressIndicator(),
         if (!sent && !campus && !redirecting) ...[
+          OutlinedButton(
+            style: _providerStyle,
+            onPressed:
+                a.busy || a.loadingProviders || a.providers?.google != true
+                ? null
+                : () {
+                    a.email = '';
+                    a.startGoogle();
+                  },
+            child: const Text('Lanjut dengan Google'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            style: _providerStyle,
+            onPressed: a.busy || a.loadingProviders
+                ? null
+                : () => a.continueWithCampus(_email.text),
+            icon: const Icon(Icons.school_outlined, size: 19),
+            label: const Text('Universitas Brawijaya'),
+          ),
+          if (a.providers != null && !a.providers!.google)
+            const Padding(
+              padding: EdgeInsets.only(top: 10),
+              child: Text(
+                'Google dan UB belum tersedia. Gunakan email di bawah.',
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.6,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Row(
+              children: [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: Text(
+                    'atau lewat email',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+          ),
           AutofillGroup(
             child: TextField(
               controller: _email,
@@ -169,86 +265,34 @@ class _LoginFormState extends State<_LoginForm> {
                   ? null
                   : (value) => a.continueWithEmail(value),
               decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
                 labelText: 'Alamat email',
-                hintText: 'nama@student.ub.ac.id',
+                hintText: 'nama@contoh.com',
                 errorText: a.emailError,
-              ),
-            ),
-          ),
-          if (validEmail(normalizeEmail(_email.text)) && isUbEmail(_email.text))
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: Text(
-                'Email UB dapat digunakan untuk tautan email atau login kampus melalui Google.',
-                style: TextStyle(
-                  color: AppTheme.primary,
-                  height: 1.6,
-                  fontSize: 13,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFF89899B)),
                 ),
               ),
             ),
-          const SizedBox(height: 20),
+          ),
+          const SizedBox(height: 14),
           FilledButton(
             onPressed: a.busy || a.loadingProviders
                 ? null
                 : () => a.continueWithEmail(_email.text),
-            child: Text(a.busy ? 'Memproses…' : 'Lanjut dengan email'),
-          ),
-          const SizedBox(height: 14),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(44, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed:
-                a.busy || a.loadingProviders || a.providers?.google != true
-                ? null
-                : () {
-                    a.email = '';
-                    a.startGoogle();
-                  },
-            icon: const Icon(Icons.login, size: 20),
-            label: const Text('Lanjut dengan Google'),
+            child: Text(a.busy ? 'Mengirim…' : 'Kirim tautan masuk'),
           ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(44, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: a.busy || a.loadingProviders
-                ? null
-                : () => a.continueWithCampus(_email.text),
-            icon: const Icon(Icons.school_outlined, size: 20),
-            label: const Text('Universitas Brawijaya'),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: Text(
-              'Login UB melalui Google. Kamu bisa mengisi email kampus di atas untuk mempercepat pemilihan akun.',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
-                height: 1.6,
-              ),
+          const Text(
+            'Kami akan mengirim tautan masuk. Tidak perlu password baru.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.6,
+              color: AppTheme.textSecondary,
             ),
           ),
-          if (a.providers != null && !a.providers!.google)
-            const Padding(
-              padding: EdgeInsets.only(top: 10),
-              child: Text(
-                'Login Google dan UB melalui Google belum aktif. Gunakan tautan email untuk sementara.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                  height: 1.6,
-                ),
-              ),
-            ),
         ],
         if (campus && validEmail(a.email)) ...[
           Container(
@@ -328,18 +372,21 @@ class _LoginFormState extends State<_LoginForm> {
             icon: const Icon(Icons.refresh),
             label: const Text('Coba hubungkan lagi'),
           ),
-        const SizedBox(height: 24),
-        const Text(
-          'Belum punya akun? Gunakan salah satu cara di atas untuk mendaftar. Akun email dapat digunakan setelah verifikasi berhasil.',
-          style: TextStyle(
-            fontSize: 12,
-            height: 1.7,
-            color: AppTheme.textSecondary,
-          ),
-        ),
       ],
     );
   }
+
+  ButtonStyle get _providerStyle => OutlinedButton.styleFrom(
+    minimumSize: const Size(48, 50),
+    foregroundColor: AppTheme.textPrimary,
+    side: const BorderSide(color: Color(0xFF89899B)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    textStyle: const TextStyle(
+      fontFamily: 'PlusJakartaSans',
+      fontWeight: FontWeight.w600,
+      fontSize: 14,
+    ),
+  );
 }
 
 class _ProfileForm extends StatefulWidget {

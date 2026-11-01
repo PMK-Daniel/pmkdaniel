@@ -4,10 +4,54 @@ import 'package:checklist_app/features/account/account_gateway.dart';
 import 'package:checklist_app/features/account/account_page.dart';
 import 'package:checklist_app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'support/fake_account_gateway.dart';
 
 void main() {
+  testWidgets(
+    'Provider choices work from keyboard without email; email validates inline',
+    (tester) async {
+      final gateway = FakeAccountGateway(
+        available: const AccountProviders(email: true, google: true),
+      );
+      final account = AccountController(gateway);
+      await account.loadProviders();
+      await tester.pumpWidget(
+        AccountScope(
+          controller: account,
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const AccountPage(),
+          ),
+        ),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(account.step, AccountStep.redirecting);
+      expect(gateway.googleHint, isNull);
+      expect(gateway.emails, isEmpty);
+      account.changeEmail();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Universitas Brawijaya'));
+      await tester.pumpAndSettle();
+      expect(gateway.campusGoogle, isTrue);
+      expect(gateway.emails, isEmpty);
+      account.changeEmail();
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'invalid');
+      await tester.ensureVisible(find.text('Kirim tautan masuk'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Kirim tautan masuk'));
+      await tester.pumpAndSettle();
+      expect(find.text('Masukkan alamat email yang valid.'), findsOneWidget);
+      expect(gateway.emails, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+      account.dispose();
+      await gateway.dispose();
+    },
+  );
   test(
     'Web callback clears old query and fragment without empty delimiters',
     () {

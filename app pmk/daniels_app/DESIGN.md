@@ -28,6 +28,12 @@ Flutter app, not a new brand.
   accounts without a display name first choose how they want to be addressed.
   Logout and identity changes reset navigation so protected pages do not remain
   visible behind an old route. Existing sessions can return directly to Home.
+- Login is an Operate surface: a centered 440px form, one PMK wordmark row,
+  a compact functional heading, Google and UB grouped above a separator, and
+  a labeled email field with a precise send-link action below. Provider login
+  never requires completing the email form. White fields and neutral outlines
+  keep indigo reserved for the email submission and visible focus. Explanations
+  appear progressively for sent email, missing providers, redirect and errors.
 - A single thin separator introduces the news feed. Only Web PMK appears in
   quick access. Divisions and administrative tools do not appear on Home;
   existing interview/visualisation tools remain available from Settings.
