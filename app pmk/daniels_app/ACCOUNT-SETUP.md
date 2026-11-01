@@ -2,6 +2,14 @@
 
 Repository snapshot: configure the new project with build defines `SUPABASE_URL` and `SUPABASE_PUBLIC_KEY`. No default backend credentials are bundled in this snapshot. The legacy settings recorded below describe the locally inspected earlier project, not an already configured new project. Private member/interview seed data is excluded.
 
+The new project is `wprgdiimcovlehocbdlc`, at `https://wprgdiimcovlehocbdlc.supabase.co`. Its supplied publishable key was accepted by the public Auth settings endpoint on 2026-11-01: email enabled, Google disabled, signups enabled, email confirmation required. No signup emails were sent for this check. Local build configuration lives in ignored `.local/supabase.json`; `config/supabase.example.json` is the template without a key.
+
+```sh
+flutter build web --no-wasm-dry-run --dart-define-from-file=.local/supabase.json
+```
+
+The Google OAuth client's authorized redirect must now be `https://wprgdiimcovlehocbdlc.supabase.co/auth/v1/callback`; the earlier `xnbia...` callback is for a different project and must not be used for this setup. Dashboard access is still needed to configure Google and allowed app redirects. Existing users and interview records from the earlier project have not been migrated.
+
 Email-first authentication uses the existing Supabase project, separate from the PMK admin login. Ordinary email addresses receive a passwordless login link. The same flow creates a new account or signs into an existing one. A session is shown only after verification succeeds. Names are display metadata and grant no permissions.
 
 The login screen offers three explicit options: email, Google, and Universitas Brawijaya. Email always requests a passwordless link, including for UB mailboxes. Google opens normal account selection. Universitas Brawijaya uses the same Google OAuth provider with `hd=student.ub.ac.id` when the field is blank. Optionally entering an exact `student.ub.ac.id` or `ub.ac.id` address adds `login_hint` and uses the corresponding `hd` domain. Other suffixes in the field are rejected for this shortcut. When Google is not configured, the campus screen explains the limitation and offers an email link if a valid email was entered, or a return to email entry otherwise. A verified UB mailbox is not proof of current student status. The campus shortcut is not a separate official UB SSO integration.

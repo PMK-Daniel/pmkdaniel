@@ -18,6 +18,7 @@ migrate_working_dir/
 *.iws
 .idea/
 .impeccable/
+.local/
 
 # Private data exports, credentials, and local signing material
 .env*
