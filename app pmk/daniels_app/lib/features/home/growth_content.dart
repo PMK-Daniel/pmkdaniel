@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../account/account_controller.dart';
+import '../equipping/circle_page.dart';
 
 /// Editorial previews, deliberately separate from published PMK/Kambium content.
 class Reflection {
@@ -318,53 +319,7 @@ class _JournalPageState extends State<JournalPage> {
 class EquippingPage extends StatelessWidget {
   const EquippingPage({super.key});
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Pembekalan')),
-    body: ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Image.asset(
-            'assets/icons/flat-v2/pembekalan.png',
-            width: 100,
-            height: 100,
-            excludeFromSemantics: true,
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          'Berakar dalam iman.\nBertumbuh dalam hidup.',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            height: 1.25,
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Ruang belajar untuk anak muda: baca materi, renungkan, lalu terapkan dalam keseharian.',
-          style: TextStyle(fontSize: 16, height: 1.7),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'Materi pembekalan belum diterbitkan. Konten KambiumGo belum terhubung.',
-          style: TextStyle(color: AppTheme.textSecondary, height: 1.6),
-        ),
-        const Divider(height: 40),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Mulai dari saling menguatkan'),
-          subtitle: const Text('Contoh refleksi • bukan materi KambiumGo'),
-          trailing: const Icon(Icons.arrow_forward),
-          onTap: () => openPage(
-            context,
-            ReflectionPage(reflection: reflectionPreviews.first),
-          ),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) => const CircleLearningPage();
 }
 
 class NewsArticle {

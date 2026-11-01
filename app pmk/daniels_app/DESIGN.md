@@ -40,6 +40,12 @@ Flutter app, not a new brand.
   quick access. Divisions and administrative tools do not appear on Home;
   existing interview/visualisation tools remain available from Settings.
 - Home, Friend, Settings remain the three bottom destinations.
+- Pembekalan uses the real Daniel Circle sequence from Notion: phase,
+  curriculum, numbered meeting, then material/discussion/facilitator documents.
+  It is an Operate catalog and a Read detail surface. A compact phase selector
+  and search lead to open numbered rows; no repeated promotional cards.
+  Readable text uses a bounded width and 17px type with original PDFs available.
+  Reflections and completion are explicit local actions with per-account storage.
 - New service pages state availability honestly. Prayer, spiritual consultation,
   and academic support have no invented providers or submission endpoints.
 - Energy 3: custom colorful illustration and brand color. Rhythm 2: photograph,

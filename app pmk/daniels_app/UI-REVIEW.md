@@ -1,5 +1,33 @@
 # Review of the six-feature homepage
 
+## Real Circle curriculum — 2026-11-01
+
+The old Pembekalan placeholder and sample reflection link are replaced by the
+user-supplied Notion curriculum: 58 meetings in five original phases plus the
+main guide, with 175 PDFs / 613 pages. See `CIRCLE-IMPORT.md` for coverage,
+provenance, source-preserving text extraction and feature limits.
+
+Impeccable Operate/Read and the existing anti-slop DURING choice guide this
+surface. First-pass phone/tablet captures exposed excess phase-selector height
+and PDF hard-wrap spacing. One batched correction uses a compact native phase
+dropdown and geometry-based line joins. Original PDFs remain unchanged.
+
+Scoped gates: PASS for real source content/counts, retained PMK font/palette,
+native accessible labeled controls, numbered learning order, source links,
+error/retry states, per-account local progress, no invented lessons/testimonials,
+no decorative gradients/cards/motion and no credential-bearing URLs in the
+bundle. Native reader/curriculum captures and functional journeys use real
+imported data with isolated test identities. Login requirements remain in force;
+no real user account is created for review. Group services and cloud sync are
+not claimed. This is not a claim that the separate two-agent critique command ran.
+
+Verification: all 24 behavioral tests passed in the final regression run; both
+opt-in phone/tablet render tests passed in the bounded visual pass. Focused
+analysis found no issues. All 175 PDF hashes match the imported manifest and
+every original page has either extracted text or a guide image. No signed file
+URL or credential was found in the new bundle/source files. Original-PDF links
+are served as local assets; device-local reflection behavior is explicitly stated.
+
 ## Centered identity and color revision — 2026-11-01
 
 The requested refinement puts the Daniel Apps name above a centered 104px PMK

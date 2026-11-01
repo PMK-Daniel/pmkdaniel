@@ -13,6 +13,8 @@ import 'package:checklist_app/features/account/account_page.dart';
 import 'package:checklist_app/features/account/account_gateway.dart';
 import 'support/fake_account_gateway.dart';
 import 'package:checklist_app/theme/app_theme.dart';
+import 'package:checklist_app/features/equipping/circle_catalog.dart';
+import 'package:checklist_app/features/equipping/circle_page.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -151,6 +153,53 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       account.dispose();
       await gateway.dispose();
+      final circle = CircleCatalog.fromJson(
+        jsonDecode(File('assets/circle/catalog.json').readAsStringSync())
+            as Map<String, dynamic>,
+      );
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: CircleLearningPage(loader: () async => circle),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await capture('circle-catalog-${device.$1}');
+      final prefs = await SharedPreferences.getInstance();
+      final progress = CircleProgress(prefs, 'visual-review')..load();
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: CircleLessonPage(
+              lesson: circle.meetings.first,
+              catalog: circle,
+              progress: progress,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Halaman 1 dari 3'),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await capture('circle-reader-${device.$1}');
     }, skip: !enabled);
   }
 }

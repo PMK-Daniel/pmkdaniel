@@ -6,11 +6,15 @@ import 'package:checklist_app/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:checklist_app/features/equipping/circle_catalog.dart';
 
 void main() {
   testWidgets(
     'Six feature launchers lead to their pages, with only Web PMK in quick access',
     (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await tester.runAsync(CircleCatalog.load);
       var bibleOpened = false;
       await tester.pumpWidget(
         MaterialApp(
