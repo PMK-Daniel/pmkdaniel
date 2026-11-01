@@ -9,6 +9,19 @@ import 'support/fake_account_gateway.dart';
 
 void main() {
   test(
+    'Web callback clears old query and fragment without empty delimiters',
+    () {
+      expect(
+        accountWebRedirect(Uri.parse('http://localhost:8873/?code=old#state')),
+        'http://localhost:8873/',
+      );
+      expect(
+        accountWebRedirect(Uri.parse('https://example.com/account?next=home')),
+        'https://example.com/',
+      );
+    },
+  );
+  test(
     'Google and UB shortcuts send distinct OAuth hints without treating hints as verification',
     () async {
       expect(googleLoginParameters(), {'prompt': 'select_account'});

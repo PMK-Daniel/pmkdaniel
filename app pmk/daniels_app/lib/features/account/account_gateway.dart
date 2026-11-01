@@ -17,6 +17,7 @@ class MemberAccount {
 }
 
 String normalizeEmail(String email) => email.trim().toLowerCase();
+String accountWebRedirect(Uri location) => '${location.origin}/';
 bool validEmail(String email) =>
     email.length <= 254 &&
     RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
@@ -103,9 +104,7 @@ class SupabaseAccountGateway implements AccountGateway {
 
   String get redirectUrl => explicitRedirect.isNotEmpty
       ? explicitRedirect
-      : (kIsWeb
-            ? Uri.base.replace(path: '/', query: '', fragment: '').toString()
-            : 'danielsapp://auth-callback');
+      : (kIsWeb ? accountWebRedirect(Uri.base) : 'danielsapp://auth-callback');
 
   MemberAccount? _snapshot() {
     final session = client.auth.currentSession;
