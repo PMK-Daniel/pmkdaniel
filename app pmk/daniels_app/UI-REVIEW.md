@@ -1,5 +1,11 @@
 # Review of the six-feature homepage
 
+## Login-first flow and photo hero — 2026-11-01
+
+Signed-out users now land on login/sign-up, and verified accounts without a display name complete their profile before Home. The app uses the actual session name for “Hai, [name]!” and derives initials from its first two words. No student or membership status is inferred from the name or email. Changing identity or logging out resets the Navigator, including a page already open above Home.
+
+Following the supplied reference and the user's rejection of the blue card, the hero now uses the existing PMK photograph without a scrim, colored box, corner clipping or overlay text. The devotional title and link are on white below, followed by an open greeting row and the six shortcuts. Phone and tablet review used a signed-in fake gateway only in tests; no fake production identity was introduced. The two bounded render rounds cover the new home and login surfaces.
+
 ## Icon refinement, flat-v2
 
 The user rejected the initial 3D-like icons. Six ImageGen edits now use simplified,

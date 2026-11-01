@@ -55,8 +55,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final key = GlobalKey();
+      final hubGateway = FakeAccountGateway.signedIn();
       await tester.pumpWidget(
-        RepaintBoundary(key: key, child: const ChecklistApp()),
+        RepaintBoundary(
+          key: key,
+          child: ChecklistApp(accountGateway: hubGateway),
+        ),
       );
       await tester.runAsync(() async {
         final context = tester.element(find.byType(MaterialApp));
@@ -110,6 +114,7 @@ void main() {
       }
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
+      await hubGateway.dispose();
       final gateway = FakeAccountGateway();
       final account = AccountController(gateway);
       await account.loadProviders();

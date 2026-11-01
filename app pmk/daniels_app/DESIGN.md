@@ -18,9 +18,16 @@ Flutter app, not a new brand.
   `.impeccable/assets/flat-v2-generation.json`. Previous versions remain preserved.
 - Three columns on phones and medium widths, six on wide canvases, two on narrow
   screens with enlarged text. Labels can wrap; no fixed-height text areas.
-- The hero retains a real PMK community photograph, with an indigo scrim whose
-  worst-case background is checked against white text. Orange owns its primary
-  reading action rather than being scattered as unrelated decoration.
+- The hero shows the real PMK community photograph without tint, overlay text,
+  rounded card framing or shadow. It reaches the phone's edges and is centered
+  within an 880px reading width on larger screens. The devotional title and
+  reading link sit on the white page below. An orange initials avatar and
+  “Hai, [profile name]!” greeting precede the feature shortcuts, following the
+  supplied reference's order without inventing membership status.
+- Signed-out visitors first see login/sign-up. A verified session opens Home;
+  accounts without a display name first choose how they want to be addressed.
+  Logout and identity changes reset navigation so protected pages do not remain
+  visible behind an old route. Existing sessions can return directly to Home.
 - A single thin separator introduces the news feed. Only Web PMK appears in
   quick access. Divisions and administrative tools do not appear on Home;
   existing interview/visualisation tools remain available from Settings.

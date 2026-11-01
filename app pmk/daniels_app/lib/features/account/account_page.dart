@@ -44,18 +44,21 @@ class AccountEntry extends StatelessWidget {
 }
 
 class AccountPage extends StatelessWidget {
-  const AccountPage({super.key});
+  final bool onboarding;
+  const AccountPage({super.key, this.onboarding = false});
   @override
   Widget build(BuildContext context) {
     final account = AccountScope.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Akun Daniel Apps')),
+      appBar: AppBar(
+        title: Text(onboarding ? 'Lengkapi profil' : 'Akun Daniel Apps'),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 540),
           child: account.user == null
               ? _LoginForm(account: account)
-              : _ProfileForm(account: account),
+              : _ProfileForm(account: account, onboarding: onboarding),
         ),
       ),
     );
@@ -124,7 +127,7 @@ class _LoginFormState extends State<_LoginForm> {
               ? 'Masuk dengan\nemail UB.'
               : redirecting
               ? 'Selesaikan login\ndi browser.'
-              : 'Satu akun untuk\nperjalananmu.',
+              : 'Masuk ke\nDaniel Apps.',
           style: const TextStyle(
             fontSize: 30,
             height: 1.2,
@@ -327,7 +330,7 @@ class _LoginFormState extends State<_LoginForm> {
           ),
         const SizedBox(height: 24),
         const Text(
-          'Akun baru dapat digunakan setelah email berhasil diverifikasi. Renungan dan Alkitab tetap bisa dibaca tanpa masuk.',
+          'Belum punya akun? Gunakan salah satu cara di atas untuk mendaftar. Akun email dapat digunakan setelah verifikasi berhasil.',
           style: TextStyle(
             fontSize: 12,
             height: 1.7,
@@ -341,7 +344,8 @@ class _LoginFormState extends State<_LoginForm> {
 
 class _ProfileForm extends StatefulWidget {
   final AccountController account;
-  const _ProfileForm({required this.account});
+  final bool onboarding;
+  const _ProfileForm({required this.account, this.onboarding = false});
   @override
   State<_ProfileForm> createState() => _ProfileFormState();
 }
@@ -369,7 +373,9 @@ class _ProfileFormState extends State<_ProfileForm> {
         ),
         const SizedBox(height: 24),
         Text(
-          user.name.isEmpty ? 'Shalom, Daniels!' : 'Shalom, ${user.name}!',
+          widget.onboarding
+              ? 'Kamu ingin\ndisapa siapa?'
+              : (user.name.isEmpty ? 'Profilmu' : 'Hai, ${user.name}!'),
           style: const TextStyle(
             fontSize: 28,
             height: 1.25,
@@ -421,7 +427,13 @@ class _ProfileFormState extends State<_ProfileForm> {
                     );
                   }
                 },
-          child: Text(a.busy ? 'Memproses…' : 'Simpan profil'),
+          child: Text(
+            a.busy
+                ? 'Memproses…'
+                : widget.onboarding
+                ? 'Simpan dan masuk'
+                : 'Simpan profil',
+          ),
         ),
         if (a.error != null)
           Padding(

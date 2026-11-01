@@ -29,60 +29,66 @@ class HomeScreen extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.fromLTRB(
           ((MediaQuery.sizeOf(context).width - 880) / 2).clamp(
-            20.0,
+            0.0,
             double.infinity,
           ),
           20,
           ((MediaQuery.sizeOf(context).width - 880) / 2).clamp(
-            20.0,
+            0.0,
             double.infinity,
           ),
           28,
         ),
         children: [
-          Row(
-            children: [
-              Image.asset(
-                'assets/images/logo_pmk.png',
-                width: 46,
-                height: 46,
-                semanticLabel: 'Logo PMK Daniel',
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Daniels App',
-                      style: TextStyle(
-                        fontSize: 23,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Together to be Better.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/images/logo_pmk.png',
+                  width: 46,
+                  height: 46,
+                  semanticLabel: 'Logo PMK Daniel',
                 ),
-              ),
-              IconButton(
-                onPressed: AccountScope.maybeOf(context) == null
-                    ? onOpenSettings
-                    : () => openAccount(context),
-                tooltip: 'Akun saya',
-                style: IconButton.styleFrom(
-                  backgroundColor: AppTheme.primarySurface,
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Daniels App',
+                        style: TextStyle(
+                          fontSize: 23,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Together to be Better.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                icon: const Icon(Icons.person_outline, color: AppTheme.primary),
-              ),
-            ],
+                IconButton(
+                  onPressed: AccountScope.maybeOf(context) == null
+                      ? onOpenSettings
+                      : () => openAccount(context),
+                  tooltip: 'Akun saya',
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppTheme.primarySurface,
+                  ),
+                  icon: const Icon(
+                    Icons.person_outline,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           GrowthHome(
@@ -91,53 +97,63 @@ class HomeScreen extends StatelessWidget {
             displayName: AccountScope.maybeOf(context)?.user?.name,
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Akses cepat',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.primaryDark,
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Akses cepat',
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.primaryDark,
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          Material(
-            color: AppTheme.primarySurface,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Material(
+              color: AppTheme.primarySurface,
               borderRadius: BorderRadius.circular(12),
-              onTap: () => AppLinks.openWebsite(context),
-              child: const Padding(
-                padding: EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Icon(Icons.language, color: AppTheme.primary, size: 28),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Web PMK',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => AppLinks.openWebsite(context),
+                child: const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Icon(Icons.language, color: AppTheme.primary, size: 28),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Web PMK',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Kenali komunitas dan kegiatan kami.',
-                            style: TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 12,
-                              height: 1.5,
+                            SizedBox(height: 4),
+                            Text(
+                              'Kenali komunitas dan kegiatan kami.',
+                              style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                                height: 1.5,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 12),
-                    Icon(Icons.open_in_new, color: AppTheme.primary, size: 20),
-                  ],
+                      SizedBox(width: 12),
+                      Icon(
+                        Icons.open_in_new,
+                        color: AppTheme.primary,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

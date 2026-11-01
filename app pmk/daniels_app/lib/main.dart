@@ -20,6 +20,7 @@ import 'features/visualisasi/visualisasi_screen.dart';
 import 'data/official_pmk_data.dart';
 import 'features/account/account_gateway.dart';
 import 'features/account/account_controller.dart';
+import 'features/account/account_page.dart';
 
 const String kDefaultSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const String kDefaultSupabaseAnonKey = String.fromEnvironment(
@@ -90,11 +91,21 @@ class _ChecklistAppState extends State<ChecklistApp> {
   Widget build(BuildContext context) {
     return AccountScope(
       controller: _account,
-      child: MaterialApp(
-        title: 'Daniels App',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const DanielsMainHub(),
+      child: Builder(
+        builder: (context) {
+          final user = AccountScope.of(context).user;
+          return MaterialApp(
+            key: ValueKey(user?.id ?? 'signed-out'),
+            title: 'Daniels App',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: user == null || !user.emailVerified
+                ? const AccountPage()
+                : user.name.trim().isEmpty
+                ? const AccountPage(onboarding: true)
+                : const DanielsMainHub(),
+          );
+        },
       ),
     );
   }

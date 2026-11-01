@@ -14,6 +14,14 @@ class FakeAccountGateway implements AccountGateway {
     this.available = const AccountProviders(email: true),
     this.member,
   });
+  factory FakeAccountGateway.signedIn() => FakeAccountGateway(
+    member: const MemberAccount(
+      id: 'review-member',
+      email: 'review@example.com',
+      name: 'Tobias Andra Valentino',
+      emailVerified: true,
+    ),
+  );
   void emit(MemberAccount? value) {
     member = value;
     events.add(value);
