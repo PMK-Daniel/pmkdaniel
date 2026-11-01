@@ -124,33 +124,39 @@ class ReflectionArchivePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Renungan')),
-    body: ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text(
-          'Waktu untuk bertumbuh',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        const Text(
-          'Contoh bacaan untuk pratinjau. Arsip renungan harian akan tersedia setelah konten terbit.',
-          style: TextStyle(color: AppTheme.textSecondary, height: 1.6),
-        ),
-        const SizedBox(height: 20),
-        for (final reflection in reflectionPreviews)
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            leading: const Icon(
-              Icons.auto_stories_outlined,
-              color: AppTheme.primary,
+    body: Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            const Text(
+              'Waktu untuk bertumbuh',
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-            title: Text(reflection.title),
-            subtitle: Text(reflection.reading),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () =>
-                openPage(context, ReflectionPage(reflection: reflection)),
-          ),
-      ],
+            const SizedBox(height: 10),
+            const Text(
+              'Contoh bacaan untuk pratinjau. Arsip renungan harian akan tersedia setelah konten terbit.',
+              style: TextStyle(color: AppTheme.textSecondary, height: 1.6),
+            ),
+            const SizedBox(height: 20),
+            for (final reflection in reflectionPreviews)
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                leading: const Icon(
+                  Icons.auto_stories_outlined,
+                  color: AppTheme.primary,
+                ),
+                title: Text(reflection.title),
+                subtitle: Text(reflection.reading),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () =>
+                    openPage(context, ReflectionPage(reflection: reflection)),
+              ),
+          ],
+        ),
+      ),
     ),
   );
 }
@@ -418,51 +424,47 @@ class _NewsSectionState extends State<NewsSection> {
         style: TextStyle(color: AppTheme.textSecondary),
       ),
       const SizedBox(height: 16),
-      SizedBox(
-        height: 312 + (MediaQuery.textScalerOf(context).scale(17) - 17) * 5,
-        child: FutureBuilder<List<NewsArticle>>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return NewsStatus(
-                onRetry: () => setState(() {
-                  _future = _load();
-                }),
-              );
-            }
-            if (!snapshot.hasData) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  children: [
-                    LinearProgressIndicator(),
-                    SizedBox(height: 12),
-                    Text('Memuat kabar PMK…'),
-                  ],
-                ),
-              );
-            }
-            if (snapshot.data!.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Text('Belum ada berita terbit. Cek kembali nanti, ya.'),
-              );
-            }
-            return SizedBox(
-              height:
-                  312 + (MediaQuery.textScalerOf(context).scale(17) - 17) * 5,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: snapshot.data!.take(6).length,
-                separatorBuilder: (_, index) => const SizedBox(width: 14),
-                itemBuilder: (context, index) => SizedBox(
-                  width: MediaQuery.sizeOf(context).width < 400 ? 270 : 310,
-                  child: NewsCard(article: snapshot.data![index]),
-                ),
+      FutureBuilder<List<NewsArticle>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return NewsStatus(
+              onRetry: () => setState(() {
+                _future = _load();
+              }),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                children: [
+                  LinearProgressIndicator(),
+                  SizedBox(height: 12),
+                  Text('Memuat kabar PMK…'),
+                ],
               ),
             );
-          },
-        ),
+          }
+          if (snapshot.data!.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Text('Belum ada berita terbit. Cek kembali nanti, ya.'),
+            );
+          }
+          return SizedBox(
+            height: 312 + (MediaQuery.textScalerOf(context).scale(17) - 17) * 5,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: snapshot.data!.take(6).length,
+              separatorBuilder: (_, index) => const SizedBox(width: 14),
+              itemBuilder: (context, index) => SizedBox(
+                width: MediaQuery.sizeOf(context).width < 400 ? 270 : 310,
+                child: NewsCard(article: snapshot.data![index]),
+              ),
+            ),
+          );
+        },
       ),
     ],
   );

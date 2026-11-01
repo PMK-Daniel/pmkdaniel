@@ -10,7 +10,7 @@ class AppTheme {
   static const Color secondaryLight = Color(0xFFFFAB66);
   static const Color secondaryDark = Color(0xFF9B4810);
 
-  static const Color background = Color(0xFFFDFDFD);
+  static const Color background = Color(0xFFFFFDF9);
   static const Color primarySurface = Color(0xFFF0F0FA);
   static const Color warmSurface = Color(0xFFFFF0E3);
   static const Color cardBg = Colors.white;
@@ -43,6 +43,22 @@ class AppTheme {
       useMaterial3: true,
       fontFamily: 'PlusJakartaSans',
       scaffoldBackgroundColor: background,
+      visualDensity: VisualDensity.standard,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      dividerTheme: const DividerThemeData(color: border, thickness: 1),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primary,
+          minimumSize: const Size(48, 48),
+          side: const BorderSide(color: Color(0xFF89899B)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
         primary: primary,
@@ -52,11 +68,17 @@ class AppTheme {
         brightness: Brightness.light,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: primarySurface,
+        backgroundColor: background,
         foregroundColor: primaryDark,
         elevation: 0,
         centerTitle: false,
-        scrolledUnderElevation: 0.5,
+        scrolledUnderElevation: 0,
+        titleTextStyle: TextStyle(
+          fontFamily: 'PlusJakartaSans',
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: primaryDark,
+        ),
       ),
       listTileTheme: const ListTileThemeData(
         iconColor: primary,
@@ -113,7 +135,15 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: primarySurface,
+        fillColor: cardBg,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF89899B)),
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),

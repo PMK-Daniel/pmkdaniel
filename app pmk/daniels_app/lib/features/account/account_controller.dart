@@ -4,6 +4,8 @@ import 'account_gateway.dart';
 
 enum AccountStep { email, campusUnavailable, emailSent, redirecting }
 
+enum AccountIntent { signIn, signUp }
+
 class AccountController extends ChangeNotifier {
   final AccountGateway gateway;
   late final StreamSubscription<MemberAccount?> _subscription;
@@ -14,6 +16,19 @@ class AccountController extends ChangeNotifier {
   String? emailError;
   bool loadingProviders = false, busy = false, _disposed = false;
   AccountStep step = AccountStep.email;
+  AccountIntent intent = AccountIntent.signIn;
+  bool get isRegistering => intent == AccountIntent.signUp;
+
+  void setIntent(AccountIntent value) {
+    if (busy || _disposed || intent == value) return;
+    intent = value;
+    step = AccountStep.email;
+    email = '';
+    error = null;
+    emailError = null;
+    notifyListeners();
+  }
+
   DateTime? nextEmailAt;
 
   AccountController(this.gateway) {
@@ -122,7 +137,7 @@ class AccountController extends ChangeNotifier {
           'Tunggu satu menit sebelum mengirim email masuk lagi.',
         );
       }
-      await gateway.requestEmailLogin(email);
+      await gateway.requestEmailLogin(email, createAccount: isRegistering);
       if (_disposed) return;
       nextEmailAt = DateTime.now().add(const Duration(seconds: 60));
       step = AccountStep.emailSent;
@@ -180,6 +195,7 @@ class AccountController extends ChangeNotifier {
     email = '';
     step = AccountStep.email;
     nextEmailAt = null;
+    intent = AccountIntent.signIn;
   });
 
   void changeEmail() {

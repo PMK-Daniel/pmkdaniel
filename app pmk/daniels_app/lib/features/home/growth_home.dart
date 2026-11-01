@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import 'growth_content.dart';
 import 'support_page.dart';
+import '../equipping/circle_continue.dart';
 
 class GrowthHome extends StatelessWidget {
   final VoidCallback onOpenBible;
@@ -126,7 +127,7 @@ class GrowthHome extends StatelessWidget {
                   ('alkitab', 'Alkitab', onOpenBible),
                   (
                     'pembekalan',
-                    'Pembekalan',
+                    'Circle',
                     () => openPage(context, const EquippingPage()),
                   ),
                   (
@@ -173,6 +174,7 @@ class GrowthHome extends StatelessWidget {
                 );
               },
             ),
+            const CircleContinue(),
             const SizedBox(height: 26),
             const Divider(height: 1),
             const SizedBox(height: 26),

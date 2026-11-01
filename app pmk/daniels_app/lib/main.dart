@@ -16,11 +16,12 @@ import 'theme/app_theme.dart';
 import 'features/home/home_screen.dart';
 import 'features/home/hub_pages.dart';
 import 'features/bible/bible_screen.dart';
-import 'features/visualisasi/visualisasi_screen.dart';
 import 'data/official_pmk_data.dart';
 import 'features/account/account_gateway.dart';
 import 'features/account/account_controller.dart';
 import 'features/account/account_page.dart';
+import 'features/settings/app_preferences.dart';
+import 'features/settings/settings_page.dart';
 
 const String kDefaultSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const String kDefaultSupabaseAnonKey = String.fromEnvironment(
@@ -74,16 +75,19 @@ class ChecklistApp extends StatefulWidget {
 
 class _ChecklistAppState extends State<ChecklistApp> {
   late final AccountController _account;
+  final _preferences = AppPreferences();
   @override
   void initState() {
     super.initState();
     _account = AccountController(widget.accountGateway);
     unawaited(_account.loadProviders());
+    unawaited(_preferences.load());
   }
 
   @override
   void dispose() {
     _account.dispose();
+    _preferences.dispose();
     super.dispose();
   }
 
@@ -91,21 +95,53 @@ class _ChecklistAppState extends State<ChecklistApp> {
   Widget build(BuildContext context) {
     return AccountScope(
       controller: _account,
-      child: Builder(
-        builder: (context) {
-          final user = AccountScope.of(context).user;
-          return MaterialApp(
-            key: ValueKey(user?.id ?? 'signed-out'),
-            title: 'Daniels App',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            home: user == null || !user.emailVerified
-                ? const AccountPage()
-                : user.name.trim().isEmpty
-                ? const AccountPage(onboarding: true)
-                : const DanielsMainHub(),
-          );
-        },
+      child: PreferencesScope(
+        controller: _preferences,
+        child: Builder(
+          builder: (context) {
+            final user = AccountScope.of(context).user;
+            final preferences = PreferencesScope.maybeOf(context)!;
+            final systemMotion =
+                MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+            final reduceMotion = preferences.reduceMotion || systemMotion;
+            return MaterialApp(
+              key: ValueKey(user?.id ?? 'signed-out'),
+              title: 'Daniels App',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme.copyWith(
+                pageTransitionsTheme: reduceMotion
+                    ? const PageTransitionsTheme(
+                        builders: {
+                          TargetPlatform.android: ImmediatePageTransitions(),
+                          TargetPlatform.iOS: ImmediatePageTransitions(),
+                          TargetPlatform.windows: ImmediatePageTransitions(),
+                          TargetPlatform.macOS: ImmediatePageTransitions(),
+                          TargetPlatform.linux: ImmediatePageTransitions(),
+                        },
+                      )
+                    : null,
+              ),
+              builder: (context, child) {
+                final media = MediaQuery.of(context);
+                return MediaQuery(
+                  data: media.copyWith(
+                    textScaler: TextScaler.linear(
+                      media.textScaler.scale(16) / 16 * preferences.textScale,
+                    ),
+                    disableAnimations:
+                        media.disableAnimations || preferences.reduceMotion,
+                  ),
+                  child: child!,
+                );
+              },
+              home: user == null || !user.emailVerified
+                  ? const AccountPage()
+                  : user.name.trim().isEmpty
+                  ? const AccountPage(onboarding: true)
+                  : const DanielsMainHub(),
+            );
+          },
+        ),
       ),
     );
   }
@@ -120,15 +156,6 @@ class DanielsMainHub extends StatefulWidget {
 
 class _DanielsMainHubState extends State<DanielsMainHub> {
   int _currentIndex = 0;
-  final GlobalKey<_ChecklistHomePageState> _interviewKey =
-      GlobalKey<_ChecklistHomePageState>();
-  bool _interviewOpened = false;
-
-  Widget _retainInterview(Widget page) {
-    _interviewOpened =
-        _interviewOpened || _currentIndex == 1 || _currentIndex == 2;
-    return _interviewOpened ? page : const SizedBox.shrink();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,45 +169,15 @@ class _DanielsMainHubState extends State<DanielsMainHub> {
           index: _currentIndex,
           children: [
             HomeScreen(
-              onOpenInterview: () => setState(() => _currentIndex = 1),
-              onOpenVisualisasi: () => setState(() => _currentIndex = 2),
-              onOpenBible: () => setState(() => _currentIndex = 3),
-              onOpenSettings: () => setState(() => _currentIndex = 5),
-              onFilterInterview: (query) {
-                setState(() => _currentIndex = 1);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _interviewKey.currentState?.filterByQuery(query);
-                });
-              },
-            ),
-            _retainInterview(
-              ChecklistHomePage(
-                key: _interviewKey,
-                onBackToHome: () => setState(() => _currentIndex = 0),
-                onOpenVisualisasi: () => setState(() => _currentIndex = 2),
+              onOpenInterview: () {},
+              onOpenBible: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(builder: (_) => const BibleScreen()),
               ),
+              onOpenSettings: () => setState(() => _currentIndex = 2),
             ),
-            VisualisasiScreen(
-              items: _interviewKey.currentState?.items ?? [],
-              onBackToHome: () => setState(() => _currentIndex = 0),
-              onGoToInterview: () => setState(() => _currentIndex = 1),
-              onLoadOfficialData: (seed) {
-                _interviewKey.currentState?.loadSeedItems(seed);
-                setState(() {});
-              },
-            ),
-            const BibleScreen(),
             const FriendsPage(),
-            HubSettingsPage(
-              onCloudSettings: () {
-                setState(() => _currentIndex = 1);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _interviewKey.currentState?.showRoomSettingsDialog();
-                });
-              },
-              onInterview: () => setState(() => _currentIndex = 1),
-              onVisualisasi: () => setState(() => _currentIndex = 2),
-            ),
+            const SettingsPage(),
           ],
         ),
         bottomNavigationBar: Container(
@@ -192,20 +189,10 @@ class _DanielsMainHubState extends State<DanielsMainHub> {
                 width: 1,
               ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
           ),
           child: NavigationBar(
-            selectedIndex: _currentIndex == 4
-                ? 1
-                : (_currentIndex == 5 ? 2 : 0),
-            onDestinationSelected: (idx) =>
-                setState(() => _currentIndex = [0, 4, 5][idx]),
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
             height: 65,
             destinations: const [
               NavigationDestination(

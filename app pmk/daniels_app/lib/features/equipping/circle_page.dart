@@ -86,7 +86,7 @@ class _CircleLearningPageState extends State<CircleLearningPage> {
   Widget build(BuildContext context) {
     final catalog = _catalog, progress = _progress;
     return Scaffold(
-      appBar: AppBar(title: const Text('Pembekalan')),
+      appBar: AppBar(title: const Text('Circle')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 820),
@@ -308,7 +308,33 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
   );
   int _document = 0, _page = 0;
   bool _saving = false;
+  bool _leaving = false;
+  bool get _dirty => _note.text != widget.progress.reflection(widget.lesson.id);
   String? _message;
+  Future<bool> _confirmLeave() async {
+    if (!_dirty) return true;
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Refleksi belum disimpan'),
+            content: const Text(
+              'Tetap di halaman ini untuk menyimpan, atau abaikan perubahanmu.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Lanjut menulis'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Abaikan'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   void dispose() {
     _note.dispose();
@@ -369,231 +395,270 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
     final next = widget.catalog.meetings
         .where((p) => p.number > lesson.number)
         .firstOrNull;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          lesson.number == 0 ? 'Panduan Circle' : 'Pertemuan ${lesson.number}',
+    return PopScope(
+      canPop: !_dirty || _leaving,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop || _saving) return;
+        if (await _confirmLeave() && mounted) {
+          setState(() => _leaving = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) Navigator.pop(context);
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            lesson.number == 0
+                ? 'Panduan Circle'
+                : 'Pertemuan ${lesson.number}',
+          ),
         ),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-            children: [
-              Text(
-                lesson.title,
-                style: const TextStyle(
-                  fontSize: 27,
-                  height: 1.3,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.primaryDark,
-                ),
-              ),
-              if (lesson.phase.isNotEmpty) ...[
-                const SizedBox(height: 12),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+              children: [
                 Text(
-                  '${lesson.phase}\n${lesson.curriculum}',
+                  lesson.title,
                   style: const TextStyle(
-                    color: AppTheme.secondaryDark,
-                    height: 1.7,
+                    fontSize: 27,
+                    height: 1.3,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryDark,
                   ),
                 ),
-              ],
-              const SizedBox(height: 20),
-              if (lesson.introduction.isNotEmpty)
-                SelectableText(
-                  lesson.introduction,
-                  style: const TextStyle(fontSize: 16, height: 1.8),
-                ),
-              const SizedBox(height: 18),
-              TextButton.icon(
-                onPressed: () => _link(Uri.parse(lesson.source)),
-                icon: const Icon(Icons.open_in_new, size: 18),
-                label: const Text('Sumber: Notion Daniel Circle'),
-              ),
-              const Divider(height: 32),
-              if (doc == null)
-                const Text(
-                  'Dokumen belum tersedia pada sumber untuk pertemuan ini.',
-                )
-              else ...[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (var i = 0; i < docs.length; i++)
-                      ChoiceChip(
-                        label: Text(docs[i].label),
-                        selected: _document == i,
-                        onSelected: (_) => setState(() {
-                          _document = i;
-                          _page = 0;
-                        }),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  doc.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    height: 1.5,
-                  ),
-                ),
-                if (doc.role == 'facilitator')
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text(
-                      'Panduan ini ditujukan untuk kakak fasilitator.',
-                      style: TextStyle(color: AppTheme.textSecondary),
-                    ),
-                  ),
-                if (kIsWeb)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () =>
-                          _link(Uri.base.resolve('assets/${doc.asset}')),
-                      icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                      label: const Text('Buka PDF asli'),
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    IconButton(
-                      tooltip: 'Halaman sebelumnya',
-                      onPressed: _page == 0
-                          ? null
-                          : () => setState(() => _page--),
-                      icon: const Icon(Icons.chevron_left),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Halaman ${_page + 1} dari ${doc.pages.length}',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Halaman berikutnya',
-                      onPressed: _page >= doc.pages.length - 1
-                          ? null
-                          : () => setState(() => _page++),
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                if (doc.pageImages.isNotEmpty)
-                  Image.asset(
-                    doc.pageImages[_page],
-                    semanticLabel: '${doc.name}, halaman ${_page + 1}',
-                  )
-                else
-                  SelectableText(
-                    doc.pages[_page],
-                    style: const TextStyle(fontSize: 17, height: 1.8),
-                  ),
-                const SizedBox(height: 20),
-                Text(
-                  'Halaman ${_page + 1} / ${doc.pages.length}. Gunakan panah di atas untuk melanjutkan.',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-              if (lesson.number > 0) ...[
-                const Divider(height: 40),
-                const Text(
-                  'Refleksi pribadi',
-                  style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Gunakan pertanyaan pada Bahan diskusi untuk mencatat pemahaman dan penerapanmu.',
-                  style: TextStyle(height: 1.7),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _note,
-                  minLines: 4,
-                  maxLines: 10,
-                  enabled: widget.canSave && !_saving,
-                  decoration: const InputDecoration(
-                    labelText: 'Catatan refleksi',
-                    alignLabelWithHint: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Disimpan pada perangkat ini untuk akun Daniel Apps yang sedang masuk.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.6,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (!widget.canSave)
-                  const Text(
-                    'Masuk ke akun Daniel Apps untuk menyimpan refleksi dan progres.',
-                  ),
-                FilledButton(
-                  onPressed: _saving || !widget.canSave
-                      ? null
-                      : () => _save(widget.progress.completed(lesson.id)),
-                  child: Text(_saving ? 'Menyimpan…' : 'Simpan refleksi'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _saving || !widget.canSave
-                      ? null
-                      : () => _save(!widget.progress.completed(lesson.id)),
-                  icon: Icon(
-                    widget.progress.completed(lesson.id)
-                        ? Icons.undo
-                        : Icons.check,
-                  ),
-                  label: Text(
-                    widget.progress.completed(lesson.id)
-                        ? 'Tandai belum selesai'
-                        : 'Simpan dan tandai selesai',
-                  ),
-                ),
-                if (_message != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        _message!,
-                        style: const TextStyle(height: 1.6),
-                      ),
-                    ),
-                  ),
-                if (next != null) ...[
-                  const Divider(height: 32),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Pertemuan berikutnya'),
-                    subtitle: Text('${next.number}. ${next.title}'),
-                    trailing: const Icon(Icons.arrow_forward),
-                    onTap: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute<void>(
-                        builder: (_) => CircleLessonPage(
-                          lesson: next,
-                          catalog: widget.catalog,
-                          progress: widget.progress,
-                          canSave: widget.canSave,
-                        ),
-                      ),
+                if (lesson.phase.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    '${lesson.phase}\n${lesson.curriculum}',
+                    style: const TextStyle(
+                      color: AppTheme.secondaryDark,
+                      height: 1.7,
                     ),
                   ),
                 ],
+                const SizedBox(height: 20),
+                if (lesson.introduction.isNotEmpty)
+                  SelectableText(
+                    lesson.introduction,
+                    style: const TextStyle(fontSize: 16, height: 1.8),
+                  ),
+                const SizedBox(height: 18),
+                TextButton.icon(
+                  onPressed: () => _link(Uri.parse(lesson.source)),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: const Text('Sumber: Notion Daniel Circle'),
+                ),
+                const Divider(height: 32),
+                if (doc == null)
+                  const Text(
+                    'Dokumen belum tersedia pada sumber untuk pertemuan ini.',
+                  )
+                else ...[
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (var i = 0; i < docs.length; i++)
+                        ChoiceChip(
+                          label: Text(docs[i].label),
+                          selected: _document == i,
+                          onSelected: (_) => setState(() {
+                            _document = i;
+                            _page = 0;
+                          }),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    doc.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      height: 1.5,
+                    ),
+                  ),
+                  if (doc.role == 'facilitator')
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Panduan ini ditujukan untuk kakak fasilitator.',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    ),
+                  if (kIsWeb)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () =>
+                            _link(Uri.base.resolve('assets/${doc.asset}')),
+                        icon: const Icon(
+                          Icons.picture_as_pdf_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Buka PDF asli'),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Halaman sebelumnya',
+                        onPressed: _page == 0
+                            ? null
+                            : () => setState(() => _page--),
+                        icon: const Icon(Icons.chevron_left),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Halaman ${_page + 1} dari ${doc.pages.length}',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Halaman berikutnya',
+                        onPressed: _page >= doc.pages.length - 1
+                            ? null
+                            : () => setState(() => _page++),
+                        icon: const Icon(Icons.chevron_right),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  if (doc.pageImages.isNotEmpty)
+                    Image.asset(
+                      doc.pageImages[_page],
+                      semanticLabel: '${doc.name}, halaman ${_page + 1}',
+                    )
+                  else
+                    SelectableText(
+                      doc.pages[_page],
+                      style: const TextStyle(fontSize: 17, height: 1.8),
+                    ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Halaman ${_page + 1} / ${doc.pages.length}. Gunakan panah di atas untuk melanjutkan.',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+                if (lesson.number > 0) ...[
+                  const Divider(height: 40),
+                  const Text(
+                    'Refleksi pribadi',
+                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Gunakan pertanyaan pada Bahan diskusi untuk mencatat pemahaman dan penerapanmu.',
+                    style: TextStyle(height: 1.7),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _note,
+                    onChanged: (_) => setState(() {}),
+                    minLines: 4,
+                    maxLines: 10,
+                    enabled: widget.canSave && !_saving,
+                    decoration: const InputDecoration(
+                      labelText: 'Catatan refleksi',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Disimpan pada perangkat ini untuk akun Daniel Apps yang sedang masuk.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.6,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (!widget.canSave)
+                    const Text(
+                      'Masuk ke akun Daniel Apps untuk menyimpan refleksi dan progres.',
+                    ),
+                  FilledButton(
+                    onPressed: _saving || !widget.canSave
+                        ? null
+                        : () => _save(widget.progress.completed(lesson.id)),
+                    child: Text(_saving ? 'Menyimpan…' : 'Simpan refleksi'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _saving || !widget.canSave
+                        ? null
+                        : () => _save(!widget.progress.completed(lesson.id)),
+                    icon: Icon(
+                      widget.progress.completed(lesson.id)
+                          ? Icons.undo
+                          : Icons.check,
+                    ),
+                    label: Text(
+                      widget.progress.completed(lesson.id)
+                          ? 'Tandai belum selesai'
+                          : 'Simpan dan tandai selesai',
+                    ),
+                  ),
+                  if (_message != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          _message!,
+                          style: const TextStyle(height: 1.6),
+                        ),
+                      ),
+                    ),
+                  if (next != null) ...[
+                    const Divider(height: 32),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Pertemuan berikutnya'),
+                      subtitle: Text('${next.number}. ${next.title}'),
+                      trailing: const Icon(Icons.arrow_forward),
+                      onTap: _saving
+                          ? null
+                          : () async {
+                              if (!await _confirmLeave() || !context.mounted) {
+                                return;
+                              }
+                              try {
+                                if (widget.canSave) {
+                                  await widget.progress.visit(next.id);
+                                }
+                              } catch (_) {
+                                if (mounted) {
+                                  setState(
+                                    () => _message =
+                                        'Posisi belajar belum tersimpan. Coba lagi.',
+                                  );
+                                }
+                                return;
+                              }
+                              if (!context.mounted) return;
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => CircleLessonPage(
+                                    lesson: next,
+                                    catalog: widget.catalog,
+                                    progress: widget.progress,
+                                    canSave: widget.canSave,
+                                  ),
+                                ),
+                              );
+                            },
+                    ),
+                  ],
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

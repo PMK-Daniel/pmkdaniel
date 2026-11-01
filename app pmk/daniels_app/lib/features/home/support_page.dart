@@ -59,9 +59,9 @@ class SupportPage extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Image.asset(
-              'assets/icons/flat-v2/${kind.asset}.png',
-                width: 116,
-                height: 116,
+                'assets/icons/flat-v2/${kind.asset}.png',
+                width: 88,
+                height: 88,
                 excludeFromSemantics: true,
               ),
             ),
@@ -100,7 +100,7 @@ class SupportPage extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Pendaftaran pendampingan belum dibuka. Pantau informasi selanjutnya dari PMK Daniel.',
+                    'Permintaan belum bisa dikirim melalui aplikasi. Belum ada penerima atau jadwal pendampingan yang ditetapkan di sini.',
                     style: TextStyle(height: 1.7),
                   ),
                 ],
@@ -121,7 +121,7 @@ class SupportPage extends StatelessWidget {
                     const Padding(
                       padding: EdgeInsets.only(top: 3),
                       child: Icon(
-                        Icons.check_circle_outline,
+                        Icons.notes_rounded,
                         color: AppTheme.primary,
                         size: 20,
                       ),

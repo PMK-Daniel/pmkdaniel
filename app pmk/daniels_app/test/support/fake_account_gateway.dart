@@ -8,6 +8,7 @@ class FakeAccountGateway implements AccountGateway {
   Completer<void>? pendingEmail;
   final events = StreamController<MemberAccount?>.broadcast(sync: true);
   final emails = <String>[];
+  final createAccountRequests = <bool>[];
   String? googleHint, ssoDomain;
   bool campusGoogle = false;
   FakeAccountGateway({
@@ -42,9 +43,13 @@ class FakeAccountGateway implements AccountGateway {
   }
 
   @override
-  Future<void> requestEmailLogin(String email) async {
+  Future<void> requestEmailLogin(
+    String email, {
+    bool createAccount = false,
+  }) async {
     _check();
     emails.add(email);
+    createAccountRequests.add(createAccount);
     await pendingEmail?.future;
   }
 

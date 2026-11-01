@@ -55,7 +55,7 @@ abstract class AccountGateway {
   MemberAccount? get current;
   Stream<MemberAccount?> get changes;
   Future<AccountProviders> providers();
-  Future<void> requestEmailLogin(String email);
+  Future<void> requestEmailLogin(String email, {bool createAccount = false});
   Future<void> verifyEmailCode(String email, String code);
   Future<void> signInGoogle({String? emailHint, bool campus = false});
   Future<void> signInUb(String domain);
@@ -75,7 +75,10 @@ class UnavailableAccountGateway implements AccountGateway {
   @override
   Future<AccountProviders> providers() async => _fail();
   @override
-  Future<void> requestEmailLogin(String email) async => _fail();
+  Future<void> requestEmailLogin(
+    String email, {
+    bool createAccount = false,
+  }) async => _fail();
   @override
   Future<void> verifyEmailCode(String email, String code) async => _fail();
   @override
@@ -155,11 +158,12 @@ class SupabaseAccountGateway implements AccountGateway {
   }
 
   @override
-  Future<void> requestEmailLogin(String email) => client.auth.signInWithOtp(
-    email: email,
-    emailRedirectTo: redirectUrl,
-    shouldCreateUser: true,
-  );
+  Future<void> requestEmailLogin(String email, {bool createAccount = false}) =>
+      client.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: redirectUrl,
+        shouldCreateUser: createAccount,
+      );
 
   @override
   Future<void> verifyEmailCode(String email, String code) async {

@@ -56,7 +56,7 @@ class HomeScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Daniels App',
+                        'Daniel Apps',
                         style: TextStyle(
                           fontSize: 23,
                           fontWeight: FontWeight.w800,

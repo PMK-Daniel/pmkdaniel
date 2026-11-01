@@ -110,6 +110,16 @@ void main() {
       }
 
       await capture(device.$1);
+      await tester.tap(find.text('Settings').last);
+      await tester.pumpAndSettle();
+      await capture('settings-${device.$1}');
+      await tester.tap(find.text('Tampilan & aksesibilitas'));
+      await tester.pumpAndSettle();
+      await capture('appearance-${device.$1}');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Home').last);
+      await tester.pumpAndSettle();
       if (device.$1 == 'phone') {
         await tester.drag(find.byType(ListView).first, const Offset(0, -560));
         await tester.pumpAndSettle();
@@ -144,6 +154,11 @@ void main() {
       });
       await tester.pumpAndSettle();
       await capture('account-${device.$1}');
+      account.setIntent(AccountIntent.signUp);
+      await tester.pumpAndSettle();
+      await capture('account-signup-${device.$1}');
+      account.setIntent(AccountIntent.signIn);
+      await tester.pumpAndSettle();
       gateway.available = const AccountProviders(email: true);
       await account.loadProviders();
       await account.continueWithCampus('nama@student.ub.ac.id');

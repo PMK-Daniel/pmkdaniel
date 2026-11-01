@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../data/bible_data.dart';
 import '../../theme/app_theme.dart';
+import '../settings/settings_page.dart';
 
 class BibleScreen extends StatefulWidget {
   const BibleScreen({super.key});
@@ -15,7 +16,8 @@ class _BibleScreenState extends State<BibleScreen> {
   String _searchQuery = '';
   BibleBook? _currentReadingBook;
   int _currentChapter = 1;
-  double _fontSize = 16.0;
+  final double _fontSize = 17.0;
+  int _loadRevision = 0;
 
   List<BibleVerse> _currentVerses = [];
   bool _isLoadingChapter = false;
@@ -28,6 +30,7 @@ class _BibleScreenState extends State<BibleScreen> {
   }
 
   Future<void> _loadChapter(BibleBook book, int chapter) async {
+    final revision = ++_loadRevision;
     setState(() {
       _currentReadingBook = book;
       _currentChapter = chapter;
@@ -36,7 +39,7 @@ class _BibleScreenState extends State<BibleScreen> {
 
     final verses = await BibleData.getChapterVerses(book, chapter);
 
-    if (mounted) {
+    if (mounted && revision == _loadRevision) {
       setState(() {
         _currentVerses = verses;
         _isLoadingChapter = false;
@@ -324,7 +327,8 @@ class _BibleScreenState extends State<BibleScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Kitab ${book.name}',
@@ -333,7 +337,7 @@ class _BibleScreenState extends State<BibleScreen> {
                       fontSize: 18,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 8),
                   Text(
                     'Pilih Pasal (1 - ${book.chapters})',
                     style: const TextStyle(
@@ -349,8 +353,10 @@ class _BibleScreenState extends State<BibleScreen> {
               child: GridView.builder(
                 controller: scrollCtrl,
                 padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: (MediaQuery.sizeOf(ctx).width / 72)
+                      .floor()
+                      .clamp(3, 8),
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                 ),
@@ -409,6 +415,7 @@ class _BibleScreenState extends State<BibleScreen> {
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Daftar kitab',
           onPressed: () => setState(() => _currentReadingBook = null),
         ),
         title: InkWell(
@@ -419,11 +426,13 @@ class _BibleScreenState extends State<BibleScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '${book.name} $_currentChapter',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
+                Flexible(
+                  child: Text(
+                    '${book.name} $_currentChapter',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
                   ),
                 ),
                 const Icon(Icons.arrow_drop_down, size: 20),
@@ -434,11 +443,12 @@ class _BibleScreenState extends State<BibleScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.text_fields),
-            tooltip: 'Ukuran Font',
+            tooltip: 'Ukuran teks',
             onPressed: () {
-              setState(() {
-                _fontSize = _fontSize >= 22.0 ? 14.0 : _fontSize + 2.0;
-              });
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(builder: (_) => const AppearancePage()),
+              );
             },
           ),
           IconButton(
@@ -484,157 +494,186 @@ class _BibleScreenState extends State<BibleScreen> {
                 ],
               ),
             )
-          : ListView(
-              controller: _readerScrollController,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-              children: [
-                // Header perikop
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade200),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${book.name} Pasal $_currentChapter',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
+          : Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: ListView(
+                  controller: _readerScrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+                  children: [
+                    // Header perikop
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey.shade200),
                         ),
                       ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          book.testament == 'PL'
-                              ? 'Perjanjian Lama'
-                              : 'Perjanjian Baru',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                if (_currentVerses.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(
-                      child: Text(
-                        'Teks pasal tidak ditemukan.',
-                        style: TextStyle(color: AppTheme.textSecondary),
-                      ),
-                    ),
-                  )
-                else
-                  ..._currentVerses.map(
-                    (v) => Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 32,
-                            margin: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              '${v.verse}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.secondary,
-                              ),
-                            ),
-                          ),
                           Expanded(
                             child: Text(
-                              v.text,
-                              style: TextStyle(
-                                fontSize: _fontSize,
-                                height: 1.6,
-                                color: AppTheme.textPrimary,
+                              '${book.name} Pasal $_currentChapter',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primary,
                               ),
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.copy,
-                              size: 16,
-                              color: AppTheme.textMuted,
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
                             ),
-                            tooltip: 'Salin Ayat',
-                            onPressed: () {
-                              Clipboard.setData(
-                                ClipboardData(
-                                  text: '${v.reference} (TB) - "${v.text}"',
-                                ),
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Ayat ${v.reference} disalin!'),
-                                  duration: const Duration(seconds: 1),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            },
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              book.testament == 'PL'
+                                  ? 'Perjanjian Lama'
+                                  : 'Perjanjian Baru',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primary,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                const SizedBox(height: 28),
+                    const SizedBox(height: 16),
 
-                // Navigation buttons (Prev & Next Chapter)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: _goToPreviousChapter,
-                      icon: const Icon(Icons.arrow_back, size: 16),
-                      label: const Text('Pasal Sebelumnya'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
+                    if (_currentVerses.isEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Teks pasal belum dapat dimuat.',
+                                style: TextStyle(color: AppTheme.textSecondary),
+                              ),
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: () =>
+                                    _loadChapter(book, _currentChapter),
+                                child: const Text('Coba lagi'),
+                              ),
+                            ],
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      )
+                    else
+                      ..._currentVerses.map(
+                        (v) => Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 32,
+                                margin: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  '${v.verse}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.secondaryDark,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: SelectableText(
+                                  v.text,
+                                  style: TextStyle(
+                                    fontSize: _fontSize,
+                                    height: 1.6,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.copy,
+                                  size: 16,
+                                  color: AppTheme.textMuted,
+                                ),
+                                tooltip: 'Salin Ayat',
+                                onPressed: () {
+                                  Clipboard.setData(
+                                    ClipboardData(
+                                      text: '${v.reference} (TB) - "${v.text}"',
+                                    ),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Ayat ${v.reference} disalin!',
+                                      ),
+                                      duration: const Duration(seconds: 1),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    FilledButton.icon(
-                      onPressed: _goToNextChapter,
-                      icon: const Icon(Icons.arrow_forward, size: 16),
-                      label: const Text('Pasal Berikutnya'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
+                    const SizedBox(height: 28),
+
+                    // Navigation buttons (Prev & Next Chapter)
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed:
+                              _currentChapter == 1 &&
+                                  book.bookId == BibleData.books.first.bookId
+                              ? null
+                              : _goToPreviousChapter,
+                          icon: const Icon(Icons.arrow_back, size: 16),
+                          label: const Text('Pasal Sebelumnya'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        FilledButton.icon(
+                          onPressed:
+                              _currentChapter == book.chapters &&
+                                  book.bookId == BibleData.books.last.bookId
+                              ? null
+                              : _goToNextChapter,
+                          icon: const Icon(Icons.arrow_forward, size: 16),
+                          label: const Text('Pasal Berikutnya'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
     );
   }

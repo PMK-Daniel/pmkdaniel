@@ -34,7 +34,7 @@ void main() {
       for (final label in [
         'Renungan',
         'Alkitab',
-        'Pembekalan',
+        'Circle',
         'Dukungan doa',
         'Konsultasi Rohani',
         'Dukungan akademik',
@@ -50,7 +50,7 @@ void main() {
         if (label == 'Renungan') {
           expect(find.byType(ReflectionArchivePage), findsOneWidget);
         }
-        if (label == 'Pembekalan') {
+        if (label == 'Circle') {
           expect(find.byType(EquippingPage), findsOneWidget);
         }
         if (label.startsWith('Dukungan') || label == 'Konsultasi Rohani') {

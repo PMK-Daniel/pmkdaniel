@@ -27,12 +27,16 @@ void main() {
         ),
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
       expect(account.step, AccountStep.redirecting);
       expect(gateway.googleHint, isNull);
       expect(gateway.emails, isEmpty);
       account.changeEmail();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Login dengan akun student'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Login dengan akun student'));
       await tester.pumpAndSettle();
@@ -234,6 +238,8 @@ void main() {
       final first = account.continueWithEmail('first@example.com');
       await Future<void>.delayed(Duration.zero);
       await account.continueWithEmail('other@example.com');
+      account.setIntent(AccountIntent.signUp);
+      expect(account.intent, AccountIntent.signIn);
       expect(account.email, 'first@example.com');
       expect(gateway.emails, ['first@example.com']);
       account.dispose();
@@ -278,7 +284,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Kirim tautan ke email UB'));
       await tester.pumpAndSettle();
-      expect(find.text('Cek emailmu.'), findsOneWidget);
+      expect(find.text('Cek emailmu'), findsOneWidget);
       expect(gateway.emails, ['member@student.ub.ac.id']);
       await tester.enterText(find.byType(TextField), '123456');
       await tester.ensureVisible(find.text('Verifikasi kode'));
