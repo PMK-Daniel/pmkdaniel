@@ -38,6 +38,25 @@ class CircleLesson {
             (d) => CircleDocument.fromJson(Map<String, dynamic>.from(d as Map)),
           )
           .toList();
+
+  String sharingSummary({String commitment = '', String groupPrayer = ''}) {
+    final summary = StringBuffer()
+      ..writeln('Circle Pertemuan $number: $title')
+      ..writeln('$phase · $curriculum');
+    if (commitment.trim().isNotEmpty) {
+      summary
+        ..writeln()
+        ..writeln('Langkah nyata minggu ini:')
+        ..writeln(commitment.trim());
+    }
+    if (groupPrayer.trim().isNotEmpty) {
+      summary
+        ..writeln()
+        ..writeln('Pokok doa untuk kelompok:')
+        ..writeln(groupPrayer.trim());
+    }
+    return summary.toString().trim();
+  }
 }
 
 class CircleCatalog {
@@ -61,6 +80,7 @@ class CircleCatalog {
     _cached = catalog;
     return catalog;
   }
+
   List<CircleLesson> get meetings =>
       lessons.where((p) => p.number > 0).toList();
   List<String> get phases => meetings.map((p) => p.phase).toSet().toList();
@@ -83,9 +103,13 @@ class CircleProgress {
     lastId = data['lastId'] as String?;
   }
 
-  bool completed(String id) => (_entries[id] as Map?)?['completed'] == true;
-  String reflection(String id) =>
-      (_entries[id] as Map?)?['reflection'] as String? ?? '';
+  Map _entry(String id) => _entries[id] is Map ? _entries[id] as Map : const {};
+  bool completed(String id) => _entry(id)['completed'] == true;
+  String _text(String id, String key) =>
+      _entry(id)[key] is String ? _entry(id)[key] as String : '';
+  String reflection(String id) => _text(id, 'reflection');
+  String commitment(String id) => _text(id, 'commitment');
+  String groupPrayer(String id) => _text(id, 'groupPrayer');
   Future<void> visit(String id) async {
     final saved = await preferences.setString(
       _key,
@@ -95,9 +119,21 @@ class CircleProgress {
     lastId = id;
   }
 
-  Future<void> save(String id, String reflection, bool completed) async {
+  Future<void> save(
+    String id,
+    String reflection,
+    bool completed, {
+    String? commitment,
+    String? groupPrayer,
+  }) async {
     final entries = Map<String, dynamic>.from(_entries);
-    entries[id] = {'reflection': reflection, 'completed': completed};
+    entries[id] = {
+      ..._entry(id),
+      'reflection': reflection,
+      'completed': completed,
+      'commitment': ?commitment,
+      'groupPrayer': ?groupPrayer,
+    };
     final saved = await preferences.setString(
       _key,
       jsonEncode({'lastId': id, 'entries': entries}),

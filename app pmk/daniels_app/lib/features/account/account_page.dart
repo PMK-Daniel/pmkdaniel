@@ -55,13 +55,17 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final account = AccountScope.of(context);
-    if (account.user == null) {
+    if (account.user == null || !account.user!.emailVerified) {
       return Scaffold(
-        backgroundColor: AppTheme.primaryDark,
-        body: SafeArea(
-          child: AccountAuthForm(
-            key: ValueKey(account.intent),
-            account: account,
+        body: SizedBox.expand(
+          child: DecoratedBox(
+            decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+            child: SafeArea(
+              child: AccountAuthForm(
+                key: ValueKey(account.intent),
+                account: account,
+              ),
+            ),
           ),
         ),
       );

@@ -22,6 +22,15 @@ class AppTheme {
   static const Color success = Color(0xFF10B981);
   static const Color danger = Color(0xFFEF4444);
 
+  // Same diagonal wash as the web hero (#E2E2EF -> white -> #FFEED0),
+  // slightly deepened so it holds up as a full-screen background.
+  static const LinearGradient heroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFCDCDE8), Color(0xFFFFFAF3), Color(0xFFFFDFAE)],
+    stops: [0.0, 0.5, 1.0],
+  );
+
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
       color: const Color(0xFF3E4095).withValues(alpha: 0.06),
@@ -111,13 +120,13 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.bold,
               color: primary,
             );
           }
           return const TextStyle(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: textSecondary,
           );

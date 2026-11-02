@@ -119,7 +119,7 @@ class _BibleScreenState extends State<BibleScreen> {
             Text(
               'Terjemahan Baru (TB) • Lengkap 66 Kitab',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: AppTheme.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
@@ -171,12 +171,12 @@ class _BibleScreenState extends State<BibleScreen> {
           // Segmented Filter Chips
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 _buildSegmentButton('SEMUA', 'Semua (66)'),
-                const SizedBox(width: 8),
                 _buildSegmentButton('PL', 'Perjanjian Lama (39)'),
-                const SizedBox(width: 8),
                 _buildSegmentButton('PB', 'Perjanjian Baru (27)'),
               ],
             ),
@@ -235,7 +235,7 @@ class _BibleScreenState extends State<BibleScreen> {
                                     fontSize: 13,
                                     color: isPL
                                         ? AppTheme.primary
-                                        : AppTheme.secondary,
+                                        : AppTheme.secondaryDark,
                                   ),
                                 ),
                               ),
@@ -273,31 +273,21 @@ class _BibleScreenState extends State<BibleScreen> {
 
   Widget _buildSegmentButton(String value, String label) {
     final isSelected = _selectedTestament == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedTestament = value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primary : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? AppTheme.primary : AppTheme.border,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? Colors.white : AppTheme.textSecondary,
-              ),
-            ),
-          ),
-        ),
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      showCheckmark: false,
+      onSelected: (_) => setState(() => _selectedTestament = value),
+      labelStyle: TextStyle(
+        fontSize: 13,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+        color: isSelected ? Colors.white : AppTheme.textPrimary,
       ),
+      selectedColor: AppTheme.primary,
+      backgroundColor: Colors.white,
+      side: BorderSide(color: isSelected ? AppTheme.primary : AppTheme.border),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
     );
   }
 
@@ -537,7 +527,7 @@ class _BibleScreenState extends State<BibleScreen> {
                                   ? 'Perjanjian Lama'
                                   : 'Perjanjian Baru',
                               style: const TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.primary,
                               ),

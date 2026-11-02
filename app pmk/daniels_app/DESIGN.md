@@ -90,3 +90,57 @@ The operating mode is Operate on Home and utility pages; reading pages use Read.
 Impeccable leads the workflow. The existing local KompasKuliah anti-slop guidance
 is applied during implementation, as explicitly selected by the user in this chat.
 No skill installer or persistent agent-configuration change is part of this work.
+
+## Zed continuation, 2 November 2026
+
+- The user requested the PMK web hero's slightly stronger color wash on account
+  entry. The existing Zed implementation carries that gradient on the full account
+  canvas; no extra promotional cards are added to the member utilities.
+- Friend now starts with a real device-local list for people to contact or pray
+  for. Adding, editing, completing, deleting and undoing operate per account.
+  The Circle link follows that task rather than pushing it below the viewport.
+- Prayer, spiritual consultation and academic support offer distinct private
+  local lists. They do not submit requests, assign a counselor, or contact others.
+- Circle group details hold a name, facilitator, meeting schedule/place and member
+  names locally. An explicit copy action prepares an invitation for the user's
+  own sharing; it does not send messages. Group details never imply shared
+  membership, synchronized progress, or delivery of reminders.
+- The catalog keeps its first meeting visible on a 390×844 default-scale screen,
+  including after a group has been configured. Secondary guide/group actions stay
+  compact; storage explanation follows the lesson list.
+- A collapsed meeting guide introduces welcome/prayer, reading, discussion, then
+  reflection/application. Original Daniel Circle materials remain the source of
+  lesson content. Guided note prompts and copying a summary are optional actions.
+- The home Circle row shows actual local completion and the next unfinished
+  meeting. Finishing a meeting advances the continuation rather than reopening
+  that completed meeting. The complete state offers reviewing the catalog.
+- Functional references: YouVersion Plans with Friends
+  (https://help.youversion.com/l/en/article/djjmc4k1mf-plan-with-friends-android)
+  and Life.Church Talk It Over (https://info.life.church/talkitover). Their emphasis
+  on reading, discussing and praying together informs the local flow. No live
+  collaboration capability or visual equivalence to those apps is claimed.
+
+## Circle group system
+
+- Kelompokku is a dedicated Operate page with native Kelompok/Doa tabs, reached
+  from both the Circle catalog and Friend. An open layout puts the next meeting,
+  schedule, facilitator and member names beside their actual actions. The group
+  setup form remains a focused edit dialog; it is no longer the whole feature.
+- The prayer journal separates ongoing and answered/thanksgiving entries with
+  wrapping choice controls and real counts. Friend uses the same list vocabulary
+  for people who need contacting versus people already contacted. A new entry is
+  revealed even when the previous filter would have hidden it.
+- Meeting notes have three independent fields: private reflection, weekly
+  commitment, and prayer to share with the group. The latter two appear in a
+  progressive follow-up section. Saving and discard protection cover all three.
+  The existing storage schema gains optional keys; old notes remain untouched.
+- Copying a meeting summary includes only the explicitly shareable fields and
+  meeting identity. Private reflection has no place in the sharing formatter.
+  Copying is deliberate and never sends a message to an external service.
+- Group prayer notes remain personal local records. There is no simulated shared
+  chat, shared completion, membership invitation, or notification delivery.
+- Functional references: YouVersion Plans with Friends and YouVersion Prayer
+  (https://blog.youversion.com/2020/03/youversion-bible-app-now-in-the-bible-app-prayer-feature-full-announcement/),
+  and Church Center's group hub
+  (https://help.planningcenter.com/en/140966-connect-with-your-group.html).
+  The UI retains PMK's typography, color tokens and existing native controls.

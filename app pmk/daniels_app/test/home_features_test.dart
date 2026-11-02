@@ -55,7 +55,7 @@ void main() {
         }
         if (label.startsWith('Dukungan') || label == 'Konsultasi Rohani') {
           expect(find.byType(SupportPage), findsOneWidget);
-          expect(find.text('Layanan sedang disiapkan'), findsOneWidget);
+          expect(find.text('Belum terhubung ke pendamping'), findsOneWidget);
         }
         await tester.pageBack();
         await tester.pumpAndSettle();

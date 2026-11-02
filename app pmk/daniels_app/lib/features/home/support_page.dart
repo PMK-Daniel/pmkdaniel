@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../community/personal_list.dart';
 import 'app_links.dart';
 
 enum SupportKind {
@@ -30,6 +31,40 @@ enum SupportKind {
     'Bantuan belajar yang kamu perlukan',
     'Waktu belajar yang cocok untukmu',
   );
+
+  PersonalListConfig get list => switch (this) {
+    prayer => const PersonalListConfig(
+      kind: 'prayer',
+      heading: 'Pokok doaku',
+      addLabel: 'Tambah pokok doa',
+      titleLabel: 'Pokok doa',
+      noteLabel: 'Catatan (opsional)',
+      doneLabel: 'Sudah terjawab atau disyukuri',
+      activeLabel: 'Didoakan',
+      completedLabel: 'Terjawab / disyukuri',
+      emptyText: 'Belum ada pokok doa. Tulis satu hal yang ingin kamu doakan.',
+    ),
+    spiritual => const PersonalListConfig(
+      kind: 'spiritual',
+      heading: 'Pertanyaanku',
+      addLabel: 'Tambah pertanyaan',
+      titleLabel: 'Pertanyaan atau topik',
+      noteLabel: 'Catatan (opsional)',
+      doneLabel: 'Sudah dibicarakan',
+      emptyText:
+          'Belum ada pertanyaan. Tulis topik yang ingin kamu bicarakan dengan pendamping.',
+    ),
+    academic => const PersonalListConfig(
+      kind: 'academic',
+      heading: 'Rencana belajarku',
+      addLabel: 'Tambah rencana belajar',
+      titleLabel: 'Mata kuliah atau materi',
+      noteLabel: 'Bantuan atau tenggat (opsional)',
+      doneLabel: 'Selesai',
+      emptyText:
+          'Belum ada rencana belajar. Tulis mata kuliah atau materi yang ingin kamu kerjakan.',
+    ),
+  };
 
   final String label, asset, title, description, first, second, third;
   const SupportKind(
@@ -91,7 +126,7 @@ class SupportPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Layanan sedang disiapkan',
+                    'Belum terhubung ke pendamping',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
@@ -100,7 +135,7 @@ class SupportPage extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Permintaan belum bisa dikirim melalui aplikasi. Belum ada penerima atau jadwal pendampingan yang ditetapkan di sini.',
+                    'Aplikasi belum mengirim permintaan ke siapa pun dan belum ada jadwal pendampingan. Gunakan catatan di bawah untuk mempersiapkan diri, lalu bawa saat kamu bertemu langsung.',
                     style: TextStyle(height: 1.7),
                   ),
                 ],
@@ -108,7 +143,7 @@ class SupportPage extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             const Text(
-              'Sambil mempersiapkan diri',
+              'Yang bisa kamu tuliskan',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 16),
@@ -133,8 +168,10 @@ class SupportPage extends StatelessWidget {
                   ],
                 ),
               ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
+            const SizedBox(height: 12),
+            PersonalListSection(key: ValueKey(kind), config: kind.list),
+            const SizedBox(height: 28),
+            OutlinedButton.icon(
               onPressed: () => AppLinks.openWebsite(context),
               icon: const Icon(Icons.open_in_new, size: 18),
               label: const Text('Buka Web PMK'),

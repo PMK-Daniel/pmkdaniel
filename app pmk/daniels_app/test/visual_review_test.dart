@@ -15,6 +15,7 @@ import 'support/fake_account_gateway.dart';
 import 'package:checklist_app/theme/app_theme.dart';
 import 'package:checklist_app/features/equipping/circle_catalog.dart';
 import 'package:checklist_app/features/equipping/circle_page.dart';
+import 'package:checklist_app/features/community/personal_list.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,7 @@ void main() {
       ).readAsBytes().then((bytes) => ByteData.sublistView(bytes)),
     );
     await icons.load();
+    await CircleCatalog.load();
   });
 
   for (final device in [
@@ -103,13 +105,16 @@ void main() {
           final directory = Directory('.impeccable/review');
           await directory.create(recursive: true);
           await File(
-            '${directory.path}/$name.png',
+            '${directory.path}/group-system-$name.png',
           ).writeAsBytes(png!.buffer.asUint8List());
           image.dispose();
         });
       }
 
       await capture(device.$1);
+      await tester.tap(find.text('Friend').last);
+      await tester.pumpAndSettle();
+      await capture('friend-${device.$1}');
       await tester.tap(find.text('Settings').last);
       await tester.pumpAndSettle();
       await capture('settings-${device.$1}');
@@ -172,20 +177,69 @@ void main() {
         jsonDecode(File('assets/circle/catalog.json').readAsStringSync())
             as Map<String, dynamic>,
       );
+      final circleGateway = FakeAccountGateway.signedIn();
+      final circleAccount = AccountController(circleGateway);
+      final prefs = await SharedPreferences.getInstance();
+      final prayers = PersonalListStore(
+        prefs,
+        'circle-prayer',
+        circleGateway.current!.id,
+      );
+      await prayers.add(
+        'Pekan ujian',
+        'Didoakan bersama saat pertemuan berikutnya.',
+      );
+      await prayers.add(
+        'Kesehatan teman',
+        'Bersyukur sudah pulih dan kembali kuliah.',
+      );
+      await prayers.update(prayers.entries.first.id, done: true);
       await tester.pumpWidget(
         RepaintBoundary(
           key: key,
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            home: CircleLearningPage(loader: () async => circle),
+          child: AccountScope(
+            controller: circleAccount,
+            child: MaterialApp(
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              home: CircleLearningPage(loader: () async => circle),
+            ),
           ),
         ),
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await capture('circle-catalog-${device.$1}');
-      final prefs = await SharedPreferences.getInstance();
+      await tester.tap(find.text('Kelompokku'));
+      await tester.pumpAndSettle();
+      await capture('circle-workspace-${device.$1}');
+      await tester.tap(find.text('Doa').last);
+      await tester.pumpAndSettle();
+      await capture('circle-prayer-${device.$1}');
+      await tester.tap(find.text('Kelompok').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Atur kelompok'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Nama kelompok Circle'),
+        'Circle Kasih',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Nama kakak fasilitator'),
+        'Kak Rani',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Jadwal & tempat kumpul'),
+        'Jumat 16.00 · Sekretariat PMK',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Anggota kelompok'),
+        'Alya, Ben, Theo',
+      );
+      await capture('circle-group-${device.$1}');
+      await tester.tap(find.text('Simpan kelompok'));
+      await tester.pumpAndSettle();
+      await capture('circle-configured-${device.$1}');
       final progress = CircleProgress(prefs, 'visual-review')..load();
       await tester.pumpWidget(
         RepaintBoundary(
@@ -215,6 +269,27 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await capture('circle-reader-${device.$1}');
+      await tester.scrollUntilVisible(
+        find.text('Refleksi pribadi'),
+        400,
+        scrollable: find.byType(Scrollable).first,
+        maxScrolls: 80,
+      );
+      await tester.pumpAndSettle();
+      await capture('circle-reflection-${device.$1}');
+      await tester.ensureVisible(find.text('Tindak lanjut pertemuan'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tindak lanjut pertemuan'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.widgetWithText(TextField, 'Langkah nyata minggu ini'),
+      );
+      await tester.pumpAndSettle();
+      await capture('circle-followup-${device.$1}');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      circleAccount.dispose();
+      await circleGateway.dispose();
     }, skip: !enabled);
   }
 }

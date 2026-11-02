@@ -5,6 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../theme/app_theme.dart';
 import '../account/account_controller.dart';
 import 'circle_catalog.dart';
+import 'circle_group_card.dart';
+import 'circle_group_page.dart';
+import 'circle_reader.dart';
 
 class CircleLearningPage extends StatefulWidget {
   const CircleLearningPage({super.key, this.loader = CircleCatalog.load});
@@ -16,6 +19,7 @@ class CircleLearningPage extends StatefulWidget {
 class _CircleLearningPageState extends State<CircleLearningPage> {
   CircleCatalog? _catalog;
   CircleProgress? _progress;
+  CircleGroupInfo _group = const CircleGroupInfo();
   String? _error, _phase, _accountId;
   String _query = '';
   bool _started = false;
@@ -38,10 +42,12 @@ class _CircleLearningPageState extends State<CircleLearningPage> {
       final catalog = await widget.loader();
       final prefs = await SharedPreferences.getInstance();
       final progress = CircleProgress(prefs, id)..load();
+      final group = CircleGroupInfo.fromPrefs(prefs, id);
       if (!mounted || id != _accountId) return;
       setState(() {
         _catalog = catalog;
         _progress = progress;
+        _group = group;
       });
     } catch (_) {
       if (mounted && id == _accountId) {
@@ -80,6 +86,25 @@ class _CircleLearningPageState extends State<CircleLearningPage> {
       ),
     );
     if (mounted) setState(() {});
+  }
+
+  Future<void> _openGroup() async {
+    final owner = _accountId;
+    if (owner == null || owner == 'guest') return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => CircleGroupPage(
+          loader: widget.loader,
+          lessonBuilder: (lesson, catalog, progress) => CircleLessonPage(
+            lesson: lesson,
+            catalog: catalog,
+            progress: progress,
+          ),
+        ),
+      ),
+    );
+    if (mounted && owner == _accountId) await _load(owner);
   }
 
   @override
@@ -130,23 +155,45 @@ class _CircleLearningPageState extends State<CircleLearningPage> {
         ? last
         : meetings.where((p) => !progress.completed(p.id)).firstOrNull;
     String? previousGroup;
+    final guide = catalog.lessons.where((p) => p.number == 0).firstOrNull;
+    final phaseField = DropdownButtonFormField<String>(
+      initialValue: _phase ?? '',
+      isExpanded: true,
+      style: const TextStyle(
+        fontSize: 14,
+        color: AppTheme.textPrimary,
+        fontFamily: 'PlusJakartaSans',
+      ),
+      decoration: const InputDecoration(labelText: 'Fase pembinaan'),
+      items: [
+        const DropdownMenuItem(value: '', child: Text('Semua fase')),
+        for (final phase in catalog.phases)
+          DropdownMenuItem(value: phase, child: Text(phase)),
+      ],
+      onChanged: (value) => setState(() => _phase = value == '' ? null : value),
+    );
+    final searchField = TextField(
+      decoration: const InputDecoration(
+        labelText: 'Cari pertemuan',
+        prefixIcon: Icon(Icons.search),
+      ),
+      onChanged: (v) => setState(() => _query = v),
+    );
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
       children: [
-        const Text(
-          'Daniel Circle',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.primaryDark,
+        Semantics(
+          header: true,
+          child: const Text(
+            'Daniel Circle',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.primaryDark,
+            ),
           ),
         ),
-        const SizedBox(height: 10),
-        const Text(
-          'Belajar bersama, bertumbuh dalam keseharian.',
-          style: TextStyle(fontSize: 16, height: 1.6),
-        ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         Text(
           '$done dari ${meetings.length} pertemuan selesai',
           style: const TextStyle(
@@ -154,22 +201,13 @@ class _CircleLearningPageState extends State<CircleLearningPage> {
             color: AppTheme.primary,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         LinearProgressIndicator(
           value: meetings.isEmpty ? 0 : done / meetings.length,
           minHeight: 6,
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'Refleksi dan progres tersimpan di perangkat ini untuk akunmu.',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
-            height: 1.5,
-          ),
-        ),
         if (next != null) ...[
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => _open(next),
             icon: const Icon(Icons.menu_book_outlined),
@@ -178,58 +216,61 @@ class _CircleLearningPageState extends State<CircleLearningPage> {
             ),
           ),
         ],
-        if (catalog.lessons.any((p) => p.number == 0)) ...[
-          const SizedBox(height: 16),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(
-              Icons.info_outline,
-              color: AppTheme.secondaryDark,
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (guide != null)
+              TextButton.icon(
+                onPressed: () => _open(guide),
+                icon: const Icon(Icons.info_outline, size: 18),
+                label: const Text('Panduan'),
+              ),
+            TextButton.icon(
+              onPressed: _accountId == 'guest' ? null : _openGroup,
+              icon: const Icon(Icons.groups_2_outlined, size: 18),
+              label: const Text('Kelompokku'),
             ),
-            title: const Text('Panduan penerapan Circle'),
-            subtitle: const Text(
-              'Alur pembinaan dan cara memakai ketiga jenis modul',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () =>
-                _open(catalog.lessons.firstWhere((p) => p.number == 0)),
-          ),
-        ],
-        const Divider(height: 32),
-        const Text(
-          'Urutan pembinaan',
-          style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 10),
-        const Text(
-          'Ikuti nomor pertemuan. Pilih fase untuk melihat bagian tertentu.',
-          style: TextStyle(color: AppTheme.textSecondary, height: 1.6),
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          initialValue: _phase ?? '',
-          isExpanded: true,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppTheme.textPrimary,
-            fontFamily: 'PlusJakartaSans',
-          ),
-          decoration: const InputDecoration(labelText: 'Fase pembinaan'),
-          items: [
-            const DropdownMenuItem(value: '', child: Text('Semua fase')),
-            for (final phase in catalog.phases)
-              DropdownMenuItem(value: phase, child: Text(phase)),
+            if (_group.isConfigured)
+              IconButton(
+                tooltip: 'Salin ajakan kumpul',
+                onPressed: () => copyTextWithFeedback(
+                  context,
+                  _group.buildInviteMessage(next),
+                  'Pengingat kumpul disalin ke clipboard.',
+                ),
+                icon: const Icon(Icons.copy_outlined, size: 20),
+              ),
           ],
-          onChanged: (value) =>
-              setState(() => _phase = value == '' ? null : value),
         ),
-        const SizedBox(height: 18),
-        TextField(
-          decoration: const InputDecoration(
-            labelText: 'Cari pertemuan',
-            prefixIcon: Icon(Icons.search),
+        const Divider(height: 24),
+        Semantics(
+          header: true,
+          child: const Text(
+            'Urutan pembinaan',
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
           ),
-          onChanged: (v) => setState(() => _query = v),
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, box) => box.maxWidth >= 560
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: phaseField),
+                    const SizedBox(width: 12),
+                    Expanded(child: searchField),
+                  ],
+                )
+              : Column(
+                  children: [
+                    phaseField,
+                    const SizedBox(height: 12),
+                    searchField,
+                  ],
+                ),
         ),
         const SizedBox(height: 16),
         if (visible.isEmpty)
@@ -281,10 +322,21 @@ class _CircleLearningPageState extends State<CircleLearningPage> {
           ),
           const Divider(height: 1),
         ],
+        const SizedBox(height: 24),
+        const Text(
+          'Kelompok, refleksi, dan progres tersimpan di perangkat ini untuk akunmu. Belum tersinkron dengan anggota lain.',
+          style: TextStyle(
+            fontSize: 13,
+            color: AppTheme.textSecondary,
+            height: 1.5,
+          ),
+        ),
       ],
     );
   }
 }
+
+enum _LeaveChoice { stay, save, discard }
 
 class CircleLessonPage extends StatefulWidget {
   final CircleLesson lesson;
@@ -306,53 +358,92 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
   late final _note = TextEditingController(
     text: widget.progress.reflection(widget.lesson.id),
   );
+  late final _commitment = TextEditingController(
+    text: widget.progress.commitment(widget.lesson.id),
+  );
+  late final _groupPrayer = TextEditingController(
+    text: widget.progress.groupPrayer(widget.lesson.id),
+  );
   int _document = 0, _page = 0;
+  final _readerKey = GlobalKey(), _reflectionKey = GlobalKey();
   bool _saving = false;
   bool _leaving = false;
-  bool get _dirty => _note.text != widget.progress.reflection(widget.lesson.id);
+  bool get _dirty =>
+      _note.text != widget.progress.reflection(widget.lesson.id) ||
+      _commitment.text != widget.progress.commitment(widget.lesson.id) ||
+      _groupPrayer.text != widget.progress.groupPrayer(widget.lesson.id);
   String? _message;
   Future<bool> _confirmLeave() async {
     if (!_dirty) return true;
-    return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Refleksi belum disimpan'),
-            content: const Text(
-              'Tetap di halaman ini untuk menyimpan, atau abaikan perubahanmu.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Lanjut menulis'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Abaikan'),
-              ),
-            ],
+    final choice = await showDialog<_LeaveChoice>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Catatan belum disimpan'),
+        content: Text(
+          widget.canSave
+              ? 'Simpan catatan pertemuan sebelum keluar, atau lanjut menulis. Perubahan yang dibuang tidak dapat dikembalikan.'
+              : 'Perubahan yang dibuang tidak dapat dikembalikan.',
+        ),
+        actionsOverflowDirection: VerticalDirection.down,
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, _LeaveChoice.stay),
+            child: const Text('Lanjut menulis'),
           ),
-        ) ??
-        false;
+          if (widget.canSave)
+            OutlinedButton(
+              onPressed: () => Navigator.pop(ctx, _LeaveChoice.save),
+              child: const Text('Simpan dan keluar'),
+            ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF9D2632),
+            ),
+            onPressed: () => Navigator.pop(ctx, _LeaveChoice.discard),
+            child: const Text('Buang perubahan'),
+          ),
+        ],
+      ),
+    );
+    switch (choice) {
+      case _LeaveChoice.discard:
+        return true;
+      case _LeaveChoice.save:
+        return _save(widget.progress.completed(widget.lesson.id));
+      case _LeaveChoice.stay:
+      case null:
+        return false;
+    }
   }
 
   @override
   void dispose() {
     _note.dispose();
+    _commitment.dispose();
+    _groupPrayer.dispose();
     super.dispose();
   }
 
-  Future<void> _save(bool complete) async {
+  Future<bool> _save(bool complete) async {
     setState(() {
       _saving = true;
       _message = null;
     });
+    var saved = false;
     try {
-      await widget.progress.save(widget.lesson.id, _note.text, complete);
+      await widget.progress.save(
+        widget.lesson.id,
+        _note.text,
+        complete,
+        commitment: _commitment.text,
+        groupPrayer: _groupPrayer.text,
+      );
+      saved = true;
       if (mounted) {
         setState(
           () => _message = complete
-              ? 'Refleksi tersimpan. Pertemuan ditandai selesai.'
-              : 'Refleksi tersimpan.',
+              ? 'Catatan tersimpan. Pertemuan ditandai selesai.'
+              : 'Catatan pertemuan tersimpan.',
         );
       }
     } catch (_) {
@@ -362,6 +453,25 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+    return saved;
+  }
+
+  void _scrollTo(GlobalKey key) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = key.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: MediaQuery.disableAnimationsOf(target)
+            ? Duration.zero
+            : const Duration(milliseconds: 250),
+      );
+    });
+  }
+
+  void _goToPage(int page) {
+    setState(() => _page = page);
+    _scrollTo(_readerKey);
   }
 
   Future<void> _link(Uri uri) async {
@@ -378,6 +488,57 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
         );
       }
     }
+  }
+
+  Widget _readerFooter(
+    List<CircleDocument> docs,
+    CircleDocument doc,
+    CircleLesson lesson,
+  ) {
+    final lastPage = _page >= doc.pages.length - 1;
+    final nextDoc = _document + 1 < docs.length ? docs[_document + 1] : null;
+    final Widget forward;
+    if (!lastPage) {
+      forward = FilledButton.icon(
+        onPressed: () => _goToPage(_page + 1),
+        icon: const Icon(Icons.arrow_forward),
+        label: Text('Halaman ${_page + 2}'),
+      );
+    } else if (nextDoc != null) {
+      forward = FilledButton.icon(
+        onPressed: () {
+          setState(() {
+            _document++;
+            _page = 0;
+          });
+          _scrollTo(_readerKey);
+        },
+        icon: const Icon(Icons.arrow_forward),
+        label: Text('Lanjut: ${nextDoc.label}'),
+      );
+    } else if (lesson.number > 0) {
+      forward = FilledButton.icon(
+        onPressed: () => _scrollTo(_reflectionKey),
+        icon: const Icon(Icons.edit_note),
+        label: const Text('Lanjut ke refleksi'),
+      );
+    } else {
+      forward = const SizedBox.shrink();
+    }
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (_page > 0)
+          OutlinedButton.icon(
+            onPressed: () => _goToPage(_page - 1),
+            icon: const Icon(Icons.arrow_back),
+            label: Text('Halaman $_page'),
+          ),
+        forward,
+      ],
+    );
   }
 
   @override
@@ -441,16 +602,82 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
                 ],
                 const SizedBox(height: 20),
                 if (lesson.introduction.isNotEmpty)
-                  SelectableText(
-                    lesson.introduction,
-                    style: const TextStyle(fontSize: 16, height: 1.8),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.warmSurface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Semantics(
+                          header: true,
+                          child: const Text(
+                            'Ringkasan pertemuan',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.secondaryDark,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SelectableText(
+                          lesson.introduction,
+                          style: const TextStyle(fontSize: 16, height: 1.7),
+                        ),
+                      ],
+                    ),
                   ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 8),
                 TextButton.icon(
                   onPressed: () => _link(Uri.parse(lesson.source)),
                   icon: const Icon(Icons.open_in_new, size: 18),
                   label: const Text('Sumber: Notion Daniel Circle'),
                 ),
+                if (lesson.number > 0) ...[
+                  const SizedBox(height: 12),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(bottom: 16),
+                    title: const Text('Alur pertemuan kelompok'),
+                    subtitle: const Text(
+                      'Dari saling menyapa sampai langkah nyata',
+                    ),
+                    children: [
+                      for (final step in const [
+                        (
+                          'Sapa dan doa pembuka',
+                          'Saling mendengar kabar dan membuka pertemuan dalam doa.',
+                        ),
+                        (
+                          'Baca materi',
+                          'Pelajari bacaan dan ayat dari pertemuan ini bersama.',
+                        ),
+                        (
+                          'Diskusi bersama',
+                          'Gunakan Bahan diskusi; beri ruang setiap anggota untuk berbagi.',
+                        ),
+                        (
+                          'Refleksi dan langkah nyata',
+                          'Catat satu penerapan dan pokok doa untuk ditindaklanjuti.',
+                        ),
+                      ].indexed)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Text(
+                            '${step.$1 + 1}',
+                            style: const TextStyle(
+                              color: AppTheme.secondaryDark,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          title: Text(step.$2.$1),
+                          subtitle: Text(step.$2.$2),
+                        ),
+                    ],
+                  ),
+                ],
                 const Divider(height: 32),
                 if (doc == null)
                   const Text(
@@ -458,6 +685,7 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
                   )
                 else ...[
                   Wrap(
+                    key: _readerKey,
                     spacing: 8,
                     runSpacing: 8,
                     children: [
@@ -508,7 +736,7 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
                         tooltip: 'Halaman sebelumnya',
                         onPressed: _page == 0
                             ? null
-                            : () => setState(() => _page--),
+                            : () => _goToPage(_page - 1),
                         icon: const Icon(Icons.chevron_left),
                       ),
                       Expanded(
@@ -521,7 +749,7 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
                         tooltip: 'Halaman berikutnya',
                         onPressed: _page >= doc.pages.length - 1
                             ? null
-                            : () => setState(() => _page++),
+                            : () => _goToPage(_page + 1),
                         icon: const Icon(Icons.chevron_right),
                       ),
                     ],
@@ -533,31 +761,29 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
                       semanticLabel: '${doc.name}, halaman ${_page + 1}',
                     )
                   else
-                    SelectableText(
-                      doc.pages[_page],
-                      style: const TextStyle(fontSize: 17, height: 1.8),
-                    ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Halaman ${_page + 1} / ${doc.pages.length}. Gunakan panah di atas untuk melanjutkan.',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
+                    CircleReadingBody(text: doc.pages[_page]),
+                  const SizedBox(height: 24),
+                  _readerFooter(docs, doc, lesson),
                 ],
                 if (lesson.number > 0) ...[
                   const Divider(height: 40),
-                  const Text(
-                    'Refleksi pribadi',
-                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      'Refleksi pribadi',
+                      key: _reflectionKey,
+                      style: const TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'Gunakan pertanyaan pada Bahan diskusi untuk mencatat pemahaman dan penerapanmu.',
+                    'Apa yang kamu pahami dari bacaan dan diskusi? Catatan ini untukmu sendiri dan tidak masuk ke ringkasan berbagi.',
                     style: TextStyle(height: 1.7),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   TextField(
                     controller: _note,
                     onChanged: (_) => setState(() {}),
@@ -568,6 +794,77 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
                       labelText: 'Catatan refleksi',
                       alignLabelWithHint: true,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  ExpansionTile(
+                    key: const ValueKey('circle-sharing'),
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(bottom: 16),
+                    initiallyExpanded:
+                        _commitment.text.isNotEmpty ||
+                        _groupPrayer.text.isNotEmpty,
+                    title: const Text(
+                      'Tindak lanjut pertemuan',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text(
+                      'Langkah nyata dan pokok doa untuk kelompok',
+                    ),
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          'Tulis hanya hal yang ingin kamu bagikan. Tombol salin di bawah tidak menyertakan refleksi pribadimu.',
+                          style: TextStyle(
+                            height: 1.6,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                      TextField(
+                        controller: _commitment,
+                        enabled: widget.canSave && !_saving,
+                        onChanged: (_) => setState(() {}),
+                        minLines: 2,
+                        maxLines: 5,
+                        decoration: const InputDecoration(
+                          labelText: 'Langkah nyata minggu ini',
+                          hintText: 'Satu tindakan yang ingin kamu lakukan.',
+                          alignLabelWithHint: true,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _groupPrayer,
+                        enabled: widget.canSave && !_saving,
+                        onChanged: (_) => setState(() {}),
+                        minLines: 2,
+                        maxLines: 5,
+                        decoration: const InputDecoration(
+                          labelText: 'Pokok doa untuk kelompok',
+                          hintText: 'Hal yang ingin didoakan bersama.',
+                          alignLabelWithHint: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: () => copyTextWithFeedback(
+                            context,
+                            lesson.sharingSummary(
+                              commitment: _commitment.text,
+                              groupPrayer: _groupPrayer.text,
+                            ),
+                            'Ringkasan disalin tanpa refleksi pribadi.',
+                          ),
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          label: const Text(
+                            'Salin ringkasan untuk grup Circle',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   const Text(
@@ -587,7 +884,7 @@ class _CircleLessonPageState extends State<CircleLessonPage> {
                     onPressed: _saving || !widget.canSave
                         ? null
                         : () => _save(widget.progress.completed(lesson.id)),
-                    child: Text(_saving ? 'Menyimpan…' : 'Simpan refleksi'),
+                    child: Text(_saving ? 'Menyimpan…' : 'Simpan catatan'),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(

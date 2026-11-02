@@ -101,7 +101,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 (
                   'Friend dan layanan dukungan',
-                  'Direktori teman dan pengiriman permintaan belum aktif. Aplikasi tidak menerbitkan profil atau mengirim pokok doa secara otomatis.',
+                  'Daftar teman, pokok doa, pertanyaan, dan rencana belajar tersimpan di perangkat ini, terpisah untuk setiap akun, dan tidak dikirim kepada siapa pun. Direktori anggota dan pengiriman permintaan belum aktif.',
                 ),
                 (
                   'Pengaturan perangkat',
@@ -420,8 +420,8 @@ class HelpPage extends StatelessWidget {
           'Pilih fase atau cari judul pertemuan. Di dalamnya tersedia Materi, Diskusi, dan Panduan kakak. Dokumen asli tersedia melalui tombol PDF pada versi web.',
         ),
         (
-          'Friend dan dukungan belum bisa digunakan',
-          'Pengiriman permintaan dan direktori anggota belum dibuka. Informasi komunitas yang tersedia dapat dilihat melalui Web PMK.',
+          'Friend dan dukungan masih berupa catatan pribadi',
+          'Kamu bisa mencatat teman, pokok doa, pertanyaan, dan rencana belajar. Catatan itu hanya ada di perangkat ini. Pengiriman permintaan dan direktori anggota belum dibuka. Informasi komunitas dapat dilihat melalui Web PMK.',
         ),
       ])
         ExpansionTile(
